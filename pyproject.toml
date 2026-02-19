@@ -1,0 +1,29 @@
+[project]
+name = "claude-alpha-research"
+version = "0.1.0"
+description = "Autonomous Alpha Research & Execution FTE"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "numpy",
+    "scikit-learn",
+    "asyncpg",
+    "anthropic",
+    "python-dotenv",
+    "pytest",
+    "fastapi",
+    "uvicorn[standard]",
+    "streamlit",
+    "plotly",
+    "requests",
+    "pydantic",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+# Connectors: alpaca works everywhere; MT5 is Windows-only (on WSL use a bridge)
+connectors = ["alpaca-py", "MetaTrader5"]
+
+[tool.uv]
+dev-dependencies = []

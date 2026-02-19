@@ -1,0 +1,17 @@
+# Auto-detect text files and perform LF normalization
+* text=auto
+
+# Custom mappings for specific file types
+*.csv text eol=lf
+*.json text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.sql text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary

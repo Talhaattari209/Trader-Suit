@@ -1,0 +1,40 @@
+# Local testing: App + optional Neon DB proxy
+# Usage: docker-compose up -d
+# Override CMD to run once: docker-compose run app python run_killer_agent.py
+
+services:
+  app:
+    build: .
+    image: ai-employee:latest
+    container_name: ai-employee-app
+    environment:
+      - VAULT_PATH=/app/AI_Employee_Vault
+      - PYTHONPATH=/app
+      # Optional: set for Librarian/Strategist
+      # - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # - US30_CSV_PATH=/data/us30.csv
+    volumes:
+      # Persist vault and optional data
+      - ./AI_Employee_Vault:/app/AI_Employee_Vault
+      # - ./Dataset-Testing-US30:/data:ro
+    # Uncomment to run Killer only (no infinite loop):
+    # command: python run_killer_agent.py
+    # restart: "no"
+
+  # Optional: Neon (Postgres) proxy for DB-backed features
+  # neon-proxy:
+  #   image: postgres:15-alpine
+  #   container_name: ai-employee-db
+  #   environment:
+  #     - POSTGRES_USER=user
+  #     - POSTGRES_PASSWORD=password
+  #     - POSTGRES_DB=ai_employee
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
+  #   profiles:
+  #     - db
+
+# volumes:
+#   pgdata:

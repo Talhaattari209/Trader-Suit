@@ -1,0 +1,45 @@
+# CI/CD: unit tests and basic Monte Carlo checks on commit
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Unit tests (pytest)
+        run: |
+          export PYTHONPATH=${{ github.workspace }}
+          pytest tests/ -v --tb=short
+
+      - name: Monte Carlo sanity check
+        run: |
+          export PYTHONPATH=${{ github.workspace }}
+          python -c "
+          from src.tools.monte_carlo_pro import MonteCarloPro
+          import pandas as pd
+          import numpy as np
+          np.random.seed(42)
+          returns = pd.Series(np.random.randn(500) * 0.01)
+          mc = MonteCarloPro(iterations=1000)
+          res = mc.simulate_paths(returns, initial_capital=100000.0)
+          assert 0 <= res['prob_of_ruin'] <= 1
+          assert 'var_95' in res
+          print('Monte Carlo sanity OK:', res['prob_of_ruin'])
+          "

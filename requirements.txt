@@ -1,0 +1,21 @@
+asyncpg
+python-dotenv
+pandas
+numpy
+scikit-learn
+stable-baselines3
+pytest
+anthropic
+
+# API Connectors (Pluggable Senses)
+alpaca-py
+# MetaTrader5: Windows-only. On Linux/WSL use a REST/Socket bridge to a Windows-hosted MT5 terminal.
+MetaTrader5
+
+# Dashboard & API
+fastapi
+uvicorn[standard]
+streamlit
+plotly
+requests
+pydantic
