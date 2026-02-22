@@ -27,10 +27,15 @@ Content:
 {content}
 ---
 
+If the content includes "EDGE_TYPE: <name>", include a "## Edge Type" section with that value.
+
 Output your analysis in the following format (use these exact headers):
 
 ## Topic
 <short slug and title>
+
+## Edge Type
+<edge_type if present: statistical, pattern_based, volume_based, market_structure, tokenized_assets, geopolitical, prediction_event, ai_enhanced>
 
 ## Alpha Signals
 <bullet or paragraph>
@@ -115,9 +120,17 @@ class LibrarianAgent(BaseAgent):
         plans = []
         for item in state:
             path, content = item["path"], item["content"]
+            # Parse EDGE_TYPE from input so we can inject into plan
+            edge_type = ""
+            for line in content.splitlines():
+                if line.strip().upper().startswith("EDGE_TYPE:"):
+                    edge_type = line.split(":", 1)[1].strip()
+                    break
             prompt = PROMPT_TEMPLATE.format(content=content[:12000])
             try:
                 raw = await self.llm.complete(prompt, system=SYSTEM_LIBRARIAN)
+                if edge_type and "## Edge Type" not in raw:
+                    raw = "## Edge Type\n" + edge_type + "\n\n" + raw
                 # Parse topic slug: first line after "## Topic" or filename fallback
                 topic_slug = "unknown"
                 seen_topic = False

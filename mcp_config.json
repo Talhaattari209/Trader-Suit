@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "alpaca": {
+            "command": "python",
+            "args": [
+                "-m",
+                "src.mcp.alpaca_server"
+            ],
+            "cwd": "C:\\Users\\User\\Downloads\\claude"
+        }
+    }
+}

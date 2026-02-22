@@ -1,0 +1,90 @@
+2026-02-20 10:44:53,637 [ERROR] Alpaca connection failed
+Traceback (most recent call last):
+  File "C:\Users\User\Downloads\claude\src\connectors\alpaca_connector.py", line 106, in connect
+    from alpaca.trading.client import TradingClient
+ModuleNotFoundError: No module named 'alpaca'
+2026-02-20 10:46:47,788 [ERROR] Alpaca connection failed
+Traceback (most recent call last):
+  File "C:\Users\User\Downloads\claude\src\connectors\alpaca_connector.py", line 107, in connect
+    from alpaca.data.historical import StockHistoricalDataClient
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\data\__init__.py", line 4, in <module>
+    from alpaca.data.requests import *
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\data\requests.py", line 4, in <module>
+    import pytz
+ModuleNotFoundError: No module named 'pytz'
+2026-02-20 10:47:15,989 [INFO] Connected to Alpaca primary (paper=True)
+2026-02-20 10:47:15,990 [INFO] Backup Alpaca account initialized
+2026-02-20 10:47:18,907 [ERROR] get_ohlcv failed
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 198, in _one_request
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 400 Client Error: Bad Request for url: https://data.alpaca.markets/v2/stocks/bars?start=2026-02-20T03%3A47%3A15.991605%2B00%3A00&end=2026-02-20T05%3A47%3A15.991605%2B00%3A00&limit=1&timeframe=1Hour&symbols=US30
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\User\Downloads\claude\src\connectors\alpaca_connector.py", line 253, in get_ohlcv
+    bars = self._data_client.get_stock_bars(request)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\data\historical\stock.py", line 87, in get_stock_bars
+    raw_bars = self._get_marketdata(
+        path="/stocks/bars",
+        params=request_params.to_request_fields(),
+        page_size=10_000,
+    )
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 393, in _get_marketdata
+    response = self.get(path=path, data=params)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 225, in get
+    return self._request("GET", path, data, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 131, in _request
+    return self._one_request(method, url, opts, retry)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 207, in _one_request
+    raise APIError(error, http_error)
+alpaca.common.exceptions.APIError: {"message":"invalid symbol: US30"}
+
+2026-02-20 10:55:18,023 [INFO] Connected to Alpaca primary (paper=True)
+2026-02-20 10:55:18,024 [INFO] Backup Alpaca account initialized
+2026-02-20 10:55:18,966 [ERROR] get_ohlcv failed
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 198, in _one_request
+    response.raise_for_status()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\requests\models.py", line 1026, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 403 Client Error: Forbidden for url: https://data.alpaca.markets/v2/stocks/bars?start=2026-02-14T05%3A55%3A18.024960%2B00%3A00&end=2026-02-20T05%3A55%3A18.024960%2B00%3A00&limit=3&timeframe=1Day&symbols=AAPL
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\User\Downloads\claude\src\connectors\alpaca_connector.py", line 253, in get_ohlcv
+    bars = self._data_client.get_stock_bars(request)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\data\historical\stock.py", line 87, in get_stock_bars
+    raw_bars = self._get_marketdata(
+        path="/stocks/bars",
+        params=request_params.to_request_fields(),
+        page_size=10_000,
+    )
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 393, in _get_marketdata
+    response = self.get(path=path, data=params)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 225, in get
+    return self._request("GET", path, data, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 131, in _request
+    return self._one_request(method, url, opts, retry)
+           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python314\Lib\site-packages\alpaca\common\rest.py", line 207, in _one_request
+    raise APIError(error, http_error)
+alpaca.common.exceptions.APIError: {"message":"subscription does not permit querying recent SIP data"}
+
+2026-02-20 10:55:43,442 [INFO] Connected to Alpaca primary (paper=True)
+2026-02-20 10:55:43,443 [INFO] Backup Alpaca account initialized
+2026-02-20 10:56:46,720 [INFO] Connected to Alpaca primary (paper=True)
+2026-02-20 10:56:46,722 [INFO] Backup Alpaca account initialized
+2026-02-20 10:56:47,676 [DEBUG] REST get_ohlcv symbol=AAPL timeframe=1d count=3
+2026-02-20 10:56:58,899 [INFO] Connected to Alpaca primary (paper=True)
+2026-02-20 10:56:58,899 [INFO] Backup Alpaca account initialized
+2026-02-20 10:56:59,888 [DEBUG] REST get_ohlcv symbol=AAPL timeframe=1h count=2

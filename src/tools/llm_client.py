@@ -5,7 +5,6 @@ Uses Anthropic Claude; set ANTHROPIC_API_KEY in environment.
 import os
 from abc import ABC, abstractmethod
 from typing import Optional
-import google.generativeai as genai
 
 
 class BaseLLMClient(ABC):
@@ -72,10 +71,12 @@ class GeminiLLMClient(BaseLLMClient):
     def _configure(self):
         if not self._api_key:
              raise RuntimeError("GEMINI_API_KEY not set; cannot call Gemini.")
+        import google.generativeai as genai
         genai.configure(api_key=self._api_key)
+        return genai
 
     async def complete(self, prompt: str, system: Optional[str] = None) -> str:
-        self._configure()
+        genai = self._configure()
         model = genai.GenerativeModel(self.model_name)
         
         # Combine system prompt if provided (Gemini supports system instruction in newer models, 

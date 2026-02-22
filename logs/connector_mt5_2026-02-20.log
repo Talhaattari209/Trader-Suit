@@ -1,0 +1,2 @@
+2026-02-20 12:35:48,171 [INFO] MT5 connected (Allow Algorithmic Trading must be enabled in terminal)
+2026-02-20 12:35:48,183 [DEBUG] get_ohlcv symbol=USDJPY timeframe=1h count=5 bars=5

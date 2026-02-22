@@ -11,8 +11,15 @@ from .base_agent import BaseAgent
 from ..data.us30_loader import US30Loader
 from ..tools.llm_client import BaseLLMClient, AnthropicLLMClient, GeminiLLMClient
 
+try:
+    from src.edges.edge_registry import registry_summary_for_llm
+    EDGE_REGISTRY_SUMMARY = registry_summary_for_llm()
+except Exception:
+    EDGE_REGISTRY_SUMMARY = "Edge registry: statistical, pattern_based, volume_based, market_structure, tokenized_assets, geopolitical, prediction_event, ai_enhanced. Workflows in src.edges (e.g. run_statistical_workflow, run_pattern_edge)."
 
 SYSTEM_STRATEGIST = """You are an Algorithmic Trader and Python Developer. Your task is to turn a Research Plan into a concrete, executable Python strategy that implements the BaseStrategy interface.
+
+""" + EDGE_REGISTRY_SUMMARY + """
 
 You must output only valid Python code for a single file. The class must:
 1. Inherit from BaseStrategy (from src.models.base_strategy import BaseStrategy).
@@ -20,7 +27,7 @@ You must output only valid Python code for a single file. The class must:
 3. Implement exit(self, state: Dict[str, Any]) -> bool
 4. Implement risk(self, state: Dict[str, Any]) -> float
 
-The `state` dict will contain at least: Open, High, Low, Close, Volume (floats for the current bar). You may add indicators in __init__ or cache them.
+The `state` dict will contain at least: Open, High, Low, Close, Volume (floats for the current bar). You may add indicators in __init__ or cache them. If the plan specifies an edge type (e.g. statistical, pattern_based), you may call the corresponding workflow from src.edges to obtain signals (e.g. from src.edges.statistical_workflow import run_statistical_workflow) and use them in entry/exit/risk.
 
 Output ONLY the Python code: no markdown fences, no explanation. Start with the import and class definition."""
 
