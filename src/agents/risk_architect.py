@@ -144,6 +144,9 @@ class RiskArchitectAgent(BaseAgent):
         max_daily_dd_pct: float = 0.05,
         atr_period: int = 14,
         atr_sl_multiplier: float = 2.0,
+        *,
+        bootstrap_context: str | None = None,
+        skill_context: str | None = None,
     ):
         super().__init__("RiskArchitect")
         self.vault_path = Path(vault_path)

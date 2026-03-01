@@ -39,6 +39,9 @@ class KillerAgent(BaseAgent):
         slippage_pct: float = 0.0002,
         iterations: int = 10000,
         initial_capital: float = 100000.0,
+        *,
+        bootstrap_context: str | None = None,
+        skill_context: str | None = None,
     ):
         super().__init__("KillerAgent")
         self.vault_path = Path(vault_path)
@@ -259,9 +262,11 @@ class KillerAgent(BaseAgent):
             decision = "REJECT" # Default to REJECT if not meeting the 10% target explicitly
             reason = f"Return {mean_sim_return:.2%} < 10% target."
 
+        strategy_name = (state or {}).get("strategy_name", "unknown")
         return {
             "decision": decision,
             "reason": reason,
+            "strategy_name": strategy_name,
             "prob_of_ruin": prob_of_ruin,
             "actual_sharpe": actual_sharpe,
             "mean_simulated_sharpe": mean_simulated_sharpe,
@@ -340,4 +345,41 @@ mean_simulated_sharpe: {mean_simulated_sharpe:.4f}
 """
         audit_path.write_text(body, encoding="utf-8")
         self.log_action("act", f"Wrote {audit_path}")
+
+        # Paradigms Task 1: on REJECT/FLAG write journaled entry to graveyard (if DB available)
+        if decision in ("REJECT", "FLAG"):
+            try:
+                from src.tools.failure_journal import build_journal_entry
+                strategy_name = plan.get("strategy_name", "unknown")
+                metrics_pre = {
+                    "actual_sharpe": plan.get("actual_sharpe"),
+                    "mean_simulated_sharpe": plan.get("mean_simulated_sharpe"),
+                    "prob_of_ruin": plan.get("prob_of_ruin"),
+                }
+                journal = build_journal_entry(
+                    strategy_id=strategy_name,
+                    reason=reason,
+                    decision=decision,
+                    metrics_pre=metrics_pre,
+                    metrics_post=None,
+                    description=reason,
+                    mitigation="Review regime filters and parameter stability; consider narrower scope.",
+                )
+                db_url = os.environ.get("DATABASE_URL")
+                if db_url:
+                    from src.db.db_handler import DBHandler
+                    db = DBHandler(db_url)
+                    await db.connect()
+                    try:
+                        await db.add_to_graveyard(
+                            hypothesis=f"{strategy_name}: {reason[:500]}",
+                            reason_for_failure=decision,
+                            context=journal,
+                        )
+                        self.log_action("act", "Graveyard entry written (with journal)")
+                    finally:
+                        await db.close()
+            except Exception as e:
+                self.log_action("act", f"Graveyard journal skip: {e}")
+
         return True

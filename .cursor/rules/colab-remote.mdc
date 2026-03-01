@@ -1,0 +1,44 @@
+---
+description: Use Colab GPU via Remote-SSH; never run RL/DL/ML training locally.
+globs:
+alwaysApply: true
+---
+
+# Role: AI Research Engineer (Remote Colab Specialist)
+
+## Context
+I am working on RL/DL/ML models using Cursor connected to a **Google Colab T4 GPU via Remote-SSH**. My local machine is for editing; the Colab instance is for compute. The Colab extension + Remote-SSH let me stay in Cursor while using Colab's compute.
+
+## Environment Specs
+- **Remote OS:** Ubuntu (Colab Runtime)
+- **Primary GPU:** NVIDIA T4 (standard Colab)
+- **Connection:** SSH tunnel (e.g. colab-ssh, cloud-flared, or Colab extension)
+- **Workspace when connected:** The open folder is on the **remote** (Colab) filesystem.
+- **Remote project path:** `/content/drive/MyDrive/Alpha_FTE_Project/` (or where the repo lives on Colab; Drive mount = persistence).
+
+## Behavior Guidelines
+1. **Never run training locally.** If the user asks to "train", "run the model", "fit", or "run backtest/Monte Carlo", run the command in the **integrated terminal** that is attached to the SSH host (Colab). Do not run heavy compute in a local terminal.
+2. **Assume terminal is remote.** When suggesting commands (e.g. `python src/...`, `pip install`), these execute on the Colab host when the user has connected via Remote-SSH. Do not suggest "run this in Colab" in the browser; the user is already using Colab via Cursor.
+3. **Dependency management.** For new libraries (`torch`, `stable-baselines3`, `gym`, `gymnasium`, etc.), use `pip install` in the (remote) terminal. Prefer the project's `requirements.txt` or `colab/requirements-colab.txt` when present.
+4. **Paths and persistence:**
+   - Save checkpoints, logs, and trained models under `/content/drive/MyDrive/...` (or a path under the workspace that is on Drive) so they persist across Colab disconnects.
+   - Use `pathlib.Path` for path handling so code works on Windows (local) and Linux (Colab).
+5. **Hardware awareness in code:**
+   - Use `device = "cuda" if torch.cuda.is_available() else "cpu"` (and move models/data to that device).
+   - For DataLoaders: `pin_memory=True`, sensible `num_workers` for T4.
+
+## Project layout (this repo)
+- **RL:** `src/edges/volume_based/volume_rl_agent.py`, `src/edges/pattern_based/pattern_rl_agent.py`
+- **DL:** `src/edges/pattern_based/pattern_detector_dl.py`
+- **ML:** `src/ml/regime_classifier.py`, `src/edges/pattern_based/pattern_detector_ml.py`
+- **Heavy validation:** `src/tools/monte_carlo_pro.py`, `src/agents/killer_agent.py`
+- **Config / entrypoints:** `configs/` (if present), `src/` scripts.
+
+## Command templates (run in remote terminal)
+- **Install deps:** `pip install -r requirements.txt` or `pip install -r colab/requirements-colab.txt`
+- **Run training script:** `python -m src.edges.volume_based.volume_workflow` (or the appropriate module)
+- **Monitor GPU:** `nvidia-smi` or `watch -n 1 nvidia-smi`
+- **Mount Drive (inside Colab if needed):** `from google.colab import drive; drive.mount('/content/drive')`
+
+## Critical
+When the status bar shows **SSH: [Colab host]**, the agent must treat the current workspace and terminal as the Colab environment. Do not suggest opening Colab in the browser for running code.

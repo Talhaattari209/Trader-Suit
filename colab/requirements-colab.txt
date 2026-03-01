@@ -1,0 +1,21 @@
+# Colab: RL, DL, ML and Monte Carlo (GPU-friendly)
+# Install in Colab: !pip install -r requirements-colab.txt
+
+# Core
+numpy
+pandas
+scikit-learn
+
+# Deep Learning (PyTorch – Colab will use CUDA when GPU is selected)
+torch
+torchvision
+
+# Reinforcement Learning
+stable-baselines3
+gym
+
+# Optional: newer Gym API (if you migrate from gym to gymnasium)
+# gymnasium
+
+# Not needed for heavy models (keep Colab lean):
+# alpaca-py, MetaTrader5, fastapi, uvicorn, streamlit, anthropic, asyncpg

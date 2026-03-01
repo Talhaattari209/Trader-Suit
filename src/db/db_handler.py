@@ -84,6 +84,32 @@ class DBHandler:
         async with self.pool.acquire() as connection:
             return await connection.fetchval(query, hypothesis, reason_for_failure, json.dumps(context or {}))
 
+    async def fetch_graveyard_entries(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """Fetch recent graveyard entries for Reporter (Paradigms Task 1). context may include failure_mode, metrics_json."""
+        if not self.pool:
+            await self.connect()
+        query = """
+            SELECT id, hypothesis, reason_for_failure, context
+            FROM strategy_graveyard
+            ORDER BY id DESC
+            LIMIT $1
+        """
+        try:
+            async with self.pool.acquire() as connection:
+                rows = await connection.fetch(query, limit)
+                return [
+                    {
+                        "id": r["id"],
+                        "hypothesis": r["hypothesis"],
+                        "reason_for_failure": r["reason_for_failure"],
+                        "context": json.loads(r["context"]) if r.get("context") else {},
+                    }
+                    for r in rows
+                ]
+        except Exception as e:
+            self.logger.warning("fetch_graveyard_entries: %s", e)
+            return []
+
     async def fetch_market_regimes(self) -> List[Dict[str, Any]]:
         """Retrieve all market regimes."""
         if not self.pool:

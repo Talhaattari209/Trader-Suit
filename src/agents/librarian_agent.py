@@ -60,12 +60,17 @@ class LibrarianAgent(BaseAgent):
         self,
         vault_path: str,
         llm_client: BaseLLMClient | None = None,
+        *,
+        bootstrap_context: str | None = None,
+        skill_context: str | None = None,
     ):
         super().__init__("LibrarianAgent")
         self.vault_path = Path(vault_path)
         self.needs_action_dir = self.vault_path / "Needs_Action"
         self.plans_dir = self.vault_path / "Plans"
         self.logs_dir = self.vault_path / "Logs"
+        self._bootstrap_context = bootstrap_context or ""
+        self._skill_context = skill_context or ""
 
         if llm_client:
             self.llm = llm_client
@@ -127,8 +132,16 @@ class LibrarianAgent(BaseAgent):
                     edge_type = line.split(":", 1)[1].strip()
                     break
             prompt = PROMPT_TEMPLATE.format(content=content[:12000])
+            system = SYSTEM_LIBRARIAN
+            if self._bootstrap_context or self._skill_context:
+                extra = []
+                if self._bootstrap_context:
+                    extra.append(self._bootstrap_context)
+                if self._skill_context:
+                    extra.append("## Agent skills\n\n" + self._skill_context)
+                system = "\n\n".join(extra) + "\n\n---\n\n" + system
             try:
-                raw = await self.llm.complete(prompt, system=SYSTEM_LIBRARIAN)
+                raw = await self.llm.complete(prompt, system=system)
                 if edge_type and "## Edge Type" not in raw:
                     raw = "## Edge Type\n" + edge_type + "\n\n" + raw
                 # Parse topic slug: first line after "## Topic" or filename fallback

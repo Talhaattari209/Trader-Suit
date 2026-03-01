@@ -2,7 +2,9 @@
 Reporter Agent: "Monday Morning Briefing".
 Analyzes Logs/ and Accounting/ data; generates weekly Markdown report in AI_Employee_Vault/Reports/.
 Content: P&L summary, strategy approvals/rejections stats, market regime analysis.
+Paradigms Task 1: graveyard summaries with journaled failure insights, alpha decay trends (when DATABASE_URL set).
 """
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 import re
@@ -17,7 +19,13 @@ class ReporterAgent(BaseAgent):
     produces a weekly briefing in Reports/.
     """
 
-    def __init__(self, vault_path: str):
+    def __init__(
+        self,
+        vault_path: str,
+        *,
+        bootstrap_context: str | None = None,
+        skill_context: str | None = None,
+    ):
         super().__init__("Reporter")
         self.vault_path = Path(vault_path)
         self.logs_dir = self.vault_path / "Logs"
@@ -132,6 +140,26 @@ class ReporterAgent(BaseAgent):
             if "Regime Stress" in last or "prob_of_ruin" in last:
                 regime_note = "Regime stress tests (2020_crash, 2022_bear, 2023_chop) are included in recent Risk Audits."
 
+        # Paradigms Task 1: graveyard and alpha decay (optional, when DATABASE_URL set)
+        graveyard_entries = []
+        alpha_decay_trends = {}
+        db_url = os.environ.get("DATABASE_URL")
+        if db_url:
+            try:
+                from src.db.db_handler import DBHandler
+                db = DBHandler(db_url)
+                await db.connect()
+                try:
+                    graveyard_entries = await db.fetch_graveyard_entries(limit=50)
+                    for e in graveyard_entries:
+                        ctx = e.get("context") or {}
+                        mode = ctx.get("failure_mode") or "other"
+                        alpha_decay_trends[mode] = alpha_decay_trends.get(mode, 0) + 1
+                finally:
+                    await db.close()
+            except Exception as ex:
+                self.log_action("reason", f"Graveyard fetch skip: {ex}")
+
         return {
             "report_sections": {
                 "approvals_rejections": {
@@ -144,6 +172,8 @@ class ReporterAgent(BaseAgent):
                 "total_pnl": total_pnl,
                 "regime_analysis": regime_note,
             },
+            "graveyard_entries": graveyard_entries,
+            "alpha_decay_trends": alpha_decay_trends,
             "decisions": decisions,
             "audits": audits,
             "accounting": accounting,
@@ -158,6 +188,21 @@ class ReporterAgent(BaseAgent):
         week_start = week_end - timedelta(days=7)
         fname = f"Monday_Briefing_{week_end.strftime('%Y-%m-%d')}.md"
         path = self.reports_dir / fname
+
+        graveyard_entries = plan.get("graveyard_entries") or []
+        alpha_decay_trends = plan.get("alpha_decay_trends") or {}
+        graveyard_section = "No graveyard data (DATABASE_URL not set or empty)."
+        if graveyard_entries:
+            lines = []
+            for e in graveyard_entries[:15]:
+                ctx = e.get("context") or {}
+                mode = ctx.get("failure_mode", "other")
+                desc = (ctx.get("description") or e.get("hypothesis", ""))[:200]
+                lines.append(f"- **{mode}**: {desc}...")
+            graveyard_section = "\n".join(lines) + (f"\n\n_({len(graveyard_entries)} total entries)_" if len(graveyard_entries) > 15 else "")
+        decay_section = "No failure mode breakdown (no graveyard data)."
+        if alpha_decay_trends:
+            decay_section = " | ".join(f"{k}: {v}" for k, v in sorted(alpha_decay_trends.items()))
 
         body = f"""---
 type: weekly_briefing
@@ -185,10 +230,19 @@ generated_at: {datetime.now().isoformat()}
 
 {sections.get('regime_analysis', 'N/A')}
 
+## Strategy Graveyard & Failure Journals
+
+{graveyard_section}
+
+## Alpha Decay Trends (by failure_mode)
+
+{decay_section}
+
 ## Notes
 
 - Review FLAG strategies for overfitting before promoting to Done.
 - Move REJECT strategies to Strategy_Graveyard.
+- Use Telegram `/failure_report` to query graveyard journals.
 """
         path.write_text(body, encoding="utf-8")
         self.log_action("act", f"Wrote {path.name}")

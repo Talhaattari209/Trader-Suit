@@ -55,6 +55,9 @@ class StrategistAgent(BaseAgent):
         drafts_dir: str | Path | None = None,
         us30_csv_path: str | None = None,
         llm_client: BaseLLMClient | None = None,
+        *,
+        bootstrap_context: str | None = None,
+        skill_context: str | None = None,
     ):
         super().__init__("StrategistAgent")
         self.vault_path = Path(vault_path)
@@ -62,7 +65,9 @@ class StrategistAgent(BaseAgent):
         self.logs_dir = self.vault_path / "Logs"
         self.drafts_dir = Path(drafts_dir) if drafts_dir else Path(__file__).resolve().parent.parent / "models" / "drafts"
         self.us30_csv_path = us30_csv_path or os.environ.get("US30_CSV_PATH", "")
-        
+        self._bootstrap_context = bootstrap_context or ""
+        self._skill_context = skill_context or ""
+
         if llm_client:
             self.llm = llm_client
         else:
@@ -131,8 +136,16 @@ class StrategistAgent(BaseAgent):
             path, content = item["path"], item["content"]
             name = path.stem.replace("RESEARCH_PLAN_", "").strip()
             prompt = PROMPT_STRATEGIST.format(plan_content=content[:8000], rows=data_context)
+            system = SYSTEM_STRATEGIST
+            if self._bootstrap_context or self._skill_context:
+                extra = []
+                if self._bootstrap_context:
+                    extra.append(self._bootstrap_context)
+                if self._skill_context:
+                    extra.append("## Agent skills\n\n" + self._skill_context)
+                system = "\n\n".join(extra) + "\n\n---\n\n" + system
             try:
-                code = await self.llm.complete(prompt, system=SYSTEM_STRATEGIST)
+                code = await self.llm.complete(prompt, system=system)
                 # Strip markdown code blocks if present
                 if "```python" in code:
                     code = code.split("```python", 1)[-1].split("```", 1)[0].strip()
