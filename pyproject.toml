@@ -27,3 +27,6 @@ connectors = ["alpaca-py", "MetaTrader5"]
 
 [tool.uv]
 dev-dependencies = []
+
+[tool.fastapi.run]
+app = "src.api.main:app"
