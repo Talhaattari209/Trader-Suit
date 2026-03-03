@@ -9,6 +9,14 @@ from typing import List, Dict, Any, Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import os
+import sys
+from pathlib import Path
+
+# Add project root to path
+root_path = Path(__file__).resolve().parent.parent.parent
+if str(root_path) not in sys.path:
+    sys.path.insert(0, str(root_path))
 
 try:
     from src.api.alpaca_service import (

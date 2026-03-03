@@ -4,6 +4,14 @@ Sets wide layout, global theme, session state; renders Home/Dashboard.
 Other pages live in pages/ (multipage).
 """
 
+import sys
+from pathlib import Path
+
+# Add project root to path
+root_path = Path(__file__).resolve().parent.parent.parent
+if str(root_path) not in sys.path:
+    sys.path.insert(0, str(root_path))
+
 import requests
 import streamlit as st
 import pandas as pd

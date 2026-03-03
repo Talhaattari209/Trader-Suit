@@ -25,8 +25,16 @@ dev = ["pytest"]
 # Connectors: alpaca works everywhere; MT5 is Windows-only (on WSL use a bridge)
 connectors = ["alpaca-py", "MetaTrader5"]
 
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["src", "src.api", "src.dashboard", "src.agents", "src.watchers", "src.tools", "src.models", "src.connectors", "src.edges", "src.memory", "src.gateway", "src.orchestration", "src.backtest", "src.ml", "src.data", "src.db", "src.prompt", "src.mcp"]
+
 [tool.uv]
 dev-dependencies = []
 
 [tool.fastapi.run]
-app = "src.api.main:app"
+app = "main:app"
