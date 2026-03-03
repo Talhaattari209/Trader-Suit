@@ -7,6 +7,7 @@ Call init_session_state() once at app startup (e.g. in app.py).
 import streamlit as st
 from datetime import datetime, timedelta
 from typing import Any
+from src.dashboard.config import DASHBOARD_DEFAULT_DAYS
 
 
 def init_session_state() -> None:
@@ -18,7 +19,7 @@ def init_session_state() -> None:
         "selected_vault_folder": "Needs_Action",
         "selected_file_path": None,
         # Dashboard filters
-        "date_range_start": datetime.utcnow().date() - timedelta(days=30),
+        "date_range_start": datetime.utcnow().date() - timedelta(days=DASHBOARD_DEFAULT_DAYS),
         "date_range_end": datetime.utcnow().date(),
         "regime_filters": [],
         "session_filters": [],
@@ -28,6 +29,9 @@ def init_session_state() -> None:
         "alpha_data_sources": [],
         "research_plan_preview": None,
         "proceed_to_builder": False,
+        "alpha_chat_messages": [],  # list of {"role": "user"|"assistant", "content": str}
+        "alpha_iteration_count": 0,
+        "alpha_uploaded_file": None,
         # Backtester
         "backtest_strategy_id": None,
         "backtest_iterations": 5000,
@@ -35,6 +39,10 @@ def init_session_state() -> None:
         # Execution / Cockpit
         "auto_refresh": True,
         "refresh_interval_sec": 5,
+        # No-Code Builder: blocks for Specs-Driven mode [{"code", "specs", "agent_comment"}, ...]
+        "builder_blocks": [],
+        "builder_specs_input": "",  # global specs text area (e.g. "Entry on RSI<30, exit ATR*2")
+        "builder_colab_triggered": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:

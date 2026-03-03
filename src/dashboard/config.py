@@ -80,6 +80,34 @@ ALPHA_TEMPLATES = [
 ]
 
 # ---------------------------------------------------------------------------
-# Date range defaults (Dashboard)
+# Colab execution (no-code builder, optimization lab, Monte Carlo)
+# ---------------------------------------------------------------------------
+# URL to open Colab notebook for running model code. Use {params} for query string if needed.
+COLAB_NOTEBOOK_URL = os.environ.get(
+    "COLAB_NOTEBOOK_URL",
+    "https://colab.research.google.com/github/your-org/claude/blob/main/colab/run_rl_dl_ml_colab.ipynb",
+)
+# Optional: path on Drive where builder writes generated strategy for Colab to pick up.
+COLAB_DRIVE_STRATEGY_PATH = os.environ.get(
+    "COLAB_DRIVE_STRATEGY_PATH",
+    "Alpha_FTE_Project/generated_strategy.py",
+)
+
+# ---------------------------------------------------------------------------
+# No-Code Builder: default workflow step names (8 steps)
+# ---------------------------------------------------------------------------
+BUILDER_STEP_NAMES = [
+    "Data & Source",
+    "Features & Indicators",
+    "Model Architecture",
+    "Entry Logic",
+    "Exit Logic",
+    "Risk Sizing",
+    "Filters & Regime",
+    "Output & Export",
+]
+
+# ---------------------------------------------------------------------------
+# Dashboard Defaults
 # ---------------------------------------------------------------------------
 DASHBOARD_DEFAULT_DAYS = 30

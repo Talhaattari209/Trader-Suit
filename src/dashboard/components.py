@@ -166,3 +166,15 @@ def metric_eratio(value: float, delta: Optional[float] = None) -> None:
 def layout_sidebar_main(ratio: tuple[int, int] = LAYOUT_SIDEBAR_MAIN):
     """Return (sidebar_col, main_col) for st.columns([s, m]). Use with 'with' context."""
     return st.columns([ratio[0], ratio[1]])
+
+
+def plotly_layout(height: int = 320, margin: Optional[dict] = None) -> dict:
+    """Return layout dict for Plotly charts (dark theme). Use in fig.update_layout(**plotly_layout())."""
+    from src.dashboard.config import THEME
+    return {
+        "paper_bgcolor": THEME["background"],
+        "plot_bgcolor": THEME["surface"],
+        "font": {"color": THEME["text"]},
+        "height": height,
+        "margin": margin or dict(t=24, b=24, l=44, r=24),
+    }
