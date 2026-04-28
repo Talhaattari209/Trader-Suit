@@ -5,7 +5,12 @@ numpy
 scikit-learn
 stable-baselines3
 pytest
-anthropic
+# anthropic removed — project uses GEMINI_API_KEY only
+google-generativeai
+# pandas-ta (pip) NOT used — local pandas_ta_classic library loaded via indicator_engine.py
+yfinance
+shap
+httpx
 
 # API Connectors (Pluggable Senses)
 alpaca-py
@@ -15,7 +20,6 @@ MetaTrader5
 # Dashboard & API
 fastapi
 uvicorn[standard]
-streamlit
+streamlit>=1.30
 plotly
-requests
-pydantic
+pydantic>=2.0

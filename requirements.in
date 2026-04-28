@@ -1,0 +1,38 @@
+# ── Core ──────────────────────────────────────────────────────────────────────
+fastapi
+uvicorn[standard]
+streamlit>=1.30
+plotly
+httpx
+pydantic>=2.0
+
+# ── Agents & LLM ──────────────────────────────────────────────────────────────
+# No ANTHROPIC_API_KEY — project uses GEMINI_API_KEY only
+google-generativeai
+python-dotenv
+
+# ── Data & ML ─────────────────────────────────────────────────────────────────
+pandas
+numpy
+scikit-learn
+# pandas-ta NOT used — local pandas_ta_classic library at:
+#   Technical Indicators/pandas-ta-classic-main/
+# src/tools/indicator_engine.py adds it to sys.path automatically
+yfinance
+
+# ── Broker ────────────────────────────────────────────────────────────────────
+alpaca-py
+MetaTrader5; sys_platform == "win32"
+
+# ── Database ──────────────────────────────────────────────────────────────────
+asyncpg
+
+# ── RL/DL (Colab-heavy; optional locally) ────────────────────────────────────
+stable-baselines3
+
+# ── Explainability ────────────────────────────────────────────────────────────
+shap
+
+# ── Validation ────────────────────────────────────────────────────────────────
+pytest
+pytest-asyncio

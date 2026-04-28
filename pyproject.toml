@@ -3,21 +3,24 @@ name = "claude-alpha-research"
 version = "0.1.0"
 description = "Autonomous Alpha Research & Execution FTE"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "pandas",
     "numpy",
     "scikit-learn",
     "asyncpg",
-    "anthropic",
+    "google-generativeai",
     "python-dotenv",
     "pytest",
     "fastapi",
     "uvicorn[standard]",
-    "streamlit",
+    "streamlit>=1.30",
     "plotly",
-    "requests",
-    "pydantic",
+    "httpx",
+    "pydantic>=2.0",
+    # pandas-ta removed — using local pandas_ta_classic (Technical Indicators/pandas-ta-classic-main/)
+    "yfinance",
+    "shap",
 ]
 
 [project.optional-dependencies]
@@ -34,7 +37,7 @@ package-dir = {"" = "."}
 packages = ["src", "src.api", "src.dashboard", "src.agents", "src.watchers", "src.tools", "src.models", "src.connectors", "src.edges", "src.memory", "src.gateway", "src.orchestration", "src.backtest", "src.ml", "src.data", "src.db", "src.prompt", "src.mcp"]
 
 [tool.uv]
-dev-dependencies = []
+dev-dependencies = ["pytest", "pytest-asyncio", "ruff"]
 
 [tool.fastapi.run]
 app = "main:app"

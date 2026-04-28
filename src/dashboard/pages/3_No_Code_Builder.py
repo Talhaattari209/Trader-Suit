@@ -8,9 +8,11 @@ from src.dashboard.config import (
     BUILDER_STEP_NAMES,
     COLAB_NOTEBOOK_URL,
     COLAB_DRIVE_STRATEGY_PATH,
+    API_BASE_URL,
 )
 from src.dashboard.components import apply_theme, plotly_layout
 from src.dashboard.session_state import init_session_state
+from src.dashboard.autonomous_chat import render_autonomous_agent_widget
 from src.dashboard.builder_agent import code_to_specs, specs_to_code
 import plotly.graph_objects as go
 
@@ -153,6 +155,7 @@ def _render_specs_driven() -> None:
 st.set_page_config(page_title="No-Code Builder — Trader-Suit", page_icon="🔧", layout="wide")
 apply_theme()
 init_session_state()
+render_autonomous_agent_widget(api_base_url=API_BASE_URL)
 
 # Ensure builder_blocks in session state (list of {code, specs, agent_comment})
 if "builder_blocks" not in st.session_state:

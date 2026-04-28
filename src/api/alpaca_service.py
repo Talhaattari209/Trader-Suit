@@ -128,6 +128,51 @@ def _portfolio_history_from_bars(conn, days: int) -> Optional[list[dict[str, Any
         return None
 
 
+def get_closed_orders(limit: int = 50) -> list[dict[str, Any]]:
+    """Return closed/filled orders from Alpaca with entry price, side, qty, P&L."""
+    conn = _get_connector()
+    if not conn:
+        return []
+    try:
+        tc = getattr(conn, "_trading_client", None)
+        if tc is None:
+            return []
+        from alpaca.trading.requests import GetOrdersRequest
+        from alpaca.trading.enums import QueryOrderStatus
+        req = GetOrdersRequest(status=QueryOrderStatus.CLOSED, limit=limit)
+        orders = tc.get_orders(filter=req) or []
+        out = []
+        for o in orders:
+            def _f(v):
+                try:
+                    return float(v) if v is not None else None
+                except (TypeError, ValueError):
+                    return None
+            filled_qty  = _f(getattr(o, "filled_qty", None))
+            filled_avg  = _f(getattr(o, "filled_avg_price", None))
+            limit_price = _f(getattr(o, "limit_price", None))
+            stop_price  = _f(getattr(o, "stop_price", None))
+            out.append({
+                "order_id":    str(getattr(o, "id", "")),
+                "symbol":      getattr(o, "symbol", ""),
+                "side":        str(getattr(o, "side", "")),
+                "type":        str(getattr(o, "type", "")),
+                "qty":         _f(getattr(o, "qty", None)),
+                "filled_qty":  filled_qty,
+                "filled_price": filled_avg,
+                "limit_price": limit_price,
+                "stop_price":  stop_price,
+                "status":      str(getattr(o, "status", "")),
+                "created_at":  str(getattr(o, "created_at", "")),
+                "filled_at":   str(getattr(o, "filled_at", "")),
+                "notional":    _f(getattr(o, "notional", None)),
+            })
+        return out
+    except Exception as e:
+        logger.exception("get_closed_orders failed: %s", e)
+        return []
+
+
 def get_last_quote(symbol: Optional[str] = None) -> Optional[dict[str, Any]]:
     """Return latest quote for symbol (for live ticker). Uses ALPACA_TICKER_SYMBOL if symbol not given."""
     conn = _get_connector()

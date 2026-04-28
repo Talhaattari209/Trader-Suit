@@ -47,6 +47,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ── Workflow + Data routes (Phase 5) ─────────────────────────────────────────
+try:
+    from src.api.workflow_routes import router as workflow_router
+    app.include_router(workflow_router, prefix="")
+except Exception as _wr_exc:
+    import warnings
+    warnings.warn(f"workflow_routes not loaded: {_wr_exc}")
+
+# ── Autonomous Agent routes ───────────────────────────────────────────────────
+try:
+    from src.api.agent_routes import router as agent_router
+    app.include_router(agent_router, prefix="")
+except Exception as _ar_exc:
+    import warnings
+    warnings.warn(f"agent_routes not loaded: {_ar_exc}")
+
 # ---------------------------------------------------------------------------
 # Pydantic Models
 # ---------------------------------------------------------------------------

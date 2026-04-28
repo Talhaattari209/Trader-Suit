@@ -10,6 +10,11 @@ scikit-learn
 torch
 torchvision
 
+# US30 pipeline (Workflow_colab / us30_model_research.ipynb)
+yfinance
+# pandas-ta (pip) NOT used — local pandas_ta_classic at Technical Indicators/pandas-ta-classic-main/
+tensorflow
+
 # Reinforcement Learning
 stable-baselines3
 gym

@@ -1,0 +1,32 @@
+# connectors_tester/requirements.txt
+# =====================================
+# Minimal dependency set for the standalone connector tester.
+# Install with: pip install -r requirements.txt  OR  uv pip install -r requirements.txt
+
+# ── Web UI ─────────────────────────────────────────────────────────────────────
+streamlit>=1.32.0           # Dashboard framework
+
+# ── Alpaca (alpaca-py is the CURRENT official SDK; alpaca-trade-api is deprecated) ──
+alpaca-py>=0.20.0           # Trading, data, and broker clients
+alpaca-trade-api            # Legacy SDK kept for StockDataStream compatibility
+
+# ── Alpaca MCP Server (official Alpaca MCP tools over HTTP) ───────────────────
+# The MCP server runs as a sidecar process; we call it via HTTP using httpx.
+# No special package needed — just httpx below.
+
+# ── HTTP client (used to call FastAPI endpoints and the Alpaca MCP server) ────
+httpx>=0.27.0               # Async-capable HTTP; consistent with main project
+
+# ── MT5 (Windows-only; install is silent no-op on Linux) ─────────────────────
+MetaTrader5>=5.0.45; sys_platform == "win32"   # Only available on Windows
+
+# ── Data / environment ────────────────────────────────────────────────────────
+pandas>=2.0.0               # DataFrames for OHLCV and position tables
+python-dotenv>=1.0.0        # Load .env file (ALPACA_API_KEY etc.)
+numpy>=1.26.0               # Price level calculations
+
+# ── LLM (Gemini — same as main project; no Anthropic key required) ────────────
+google-generativeai>=0.7.0  # Gemini 1.5-flash for the autonomous agent
+
+# ── Optional: price level detection (copied from main project) ────────────────
+scipy>=1.13.0               # Peak detection used in price_level_detector.py

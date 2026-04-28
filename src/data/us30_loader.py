@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..connectors.base_connector import BaseConnector
 
+from src.config.computation_budget import budget as CB
+
 
 class US30Loader:
     """
@@ -13,14 +15,22 @@ class US30Loader:
     Supports: (1) CSV via file_path and load_clean_data();
     (2) Broker API via load_from_connector(connector, symbol, timeframe, count).
     Volume is optional in CSV; if missing, filled with 0 for get_rl_features.
+
+    Data is tail-sliced to CB.data_max_bars (500 local / 5,000 colab) to cap
+    memory usage and I/O time on local PC.
     """
 
     def __init__(self, file_path: str | None = None):
         self.file_path = file_path
         self.scaler = MinMaxScaler()
 
-    def load_clean_data(self) -> pd.DataFrame:
-        """Load from CSV. Requires file_path to be set."""
+    def load_clean_data(self, max_bars: int | None = None) -> pd.DataFrame:
+        """Load from CSV. Requires file_path to be set.
+
+        Args:
+            max_bars: Override the ComputationBudget cap on rows loaded.
+                      Pass None to use CB.data_max_bars automatically.
+        """
         if self.file_path is None:
             raise ValueError("file_path is required for load_clean_data(); use load_from_connector() for broker data.")
         df = pd.read_csv(self.file_path)
@@ -52,6 +62,11 @@ class US30Loader:
         df.dropna(inplace=True)
         df.sort_index(inplace=True)
 
+        # Tail-slice: keep only the most recent N bars to bound memory/compute
+        limit = max_bars if max_bars is not None else CB.data_max_bars
+        if len(df) > limit:
+            df = df.tail(limit)
+
         return df
 
     def load_from_connector(
@@ -59,15 +74,16 @@ class US30Loader:
         connector: "BaseConnector",
         symbol: str = "US30",
         timeframe: str = "1h",
-        count: int = 5000,
+        count: int | None = None,
     ) -> pd.DataFrame:
         """
         Load OHLCV from a pluggable connector (Alpaca or MT5).
         Returns DataFrame in the same format as load_clean_data() for use with get_rl_features/get_returns_series.
         """
+        bar_count = count if count is not None else CB.data_max_bars
         if not connector.connect():
             raise RuntimeError("Connector failed to connect")
-        df = connector.get_ohlcv(symbol, timeframe, count)
+        df = connector.get_ohlcv(symbol, timeframe, bar_count)
         if df is None or df.empty:
             return pd.DataFrame(columns=["Open", "High", "Low", "Close", "Volume"])
         # Connectors return index=Timestamp; ensure Volume exists
@@ -76,6 +92,9 @@ class US30Loader:
         df = df[["Open", "High", "Low", "Close", "Volume"]].copy()
         df.dropna(inplace=True)
         df.sort_index(inplace=True)
+        # Apply the same budget cap as load_clean_data
+        if len(df) > CB.data_max_bars:
+            df = df.tail(CB.data_max_bars)
         return df
 
     def get_rl_features(self, df: pd.DataFrame) -> np.ndarray:

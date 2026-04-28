@@ -1,12 +1,21 @@
 # Colab Environment for RL / DL / ML Heavy Models
 
-Run compute-heavy Alpha Factory models (RL, DL, ML, Monte Carlo) on **Google Colab** using free GPU.
+Run compute-heavy Alpha Factory models (RL, DL, ML, Monte Carlo) on **Google Colab** using free GPU. You can run in the browser or **connect Cursor to Colab via SSH** so that editing and terminal both use the Colab runtime.
 
-## Quick Start
+## Connect Cursor to Colab (SSH)
+
+To run heavy models from Cursor with compute on Colab:
+
+1. Read **[CONNECT_COLAB_SSH.md](CONNECT_COLAB_SSH.md)** for step-by-step instructions.
+2. Use **colab-ssh** in a Colab notebook to get an `ssh root@...trycloudflare.com` command.
+3. In Cursor: **Remote-SSH: Connect to Host** → paste that host → open your project folder on the Colab filesystem.
+4. All terminal commands then run on Colab (GPU). Never run training locally when connected this way.
+
+## Quick Start (browser)
 
 1. **Open in Colab**  
    - Open [Google Colab](https://colab.research.google.com).  
-   - **File → Upload notebook** and upload `setup_colab.ipynb`, then `run_rl_dl_ml_colab.ipynb`.  
+   - **File → Upload notebook** and upload `setup_colab.ipynb`, then `run_rl_dl_ml_colab.ipynb` or `us30_model_research.ipynb`.  
    - Or clone the repo in Colab (see below) and open the notebooks from the `colab/` folder.
 
 2. **Enable GPU**  
@@ -14,20 +23,19 @@ Run compute-heavy Alpha Factory models (RL, DL, ML, Monte Carlo) on **Google Col
    - Run the first notebook (`setup_colab.ipynb`) to clone the repo, install dependencies, and set `sys.path`.
 
 3. **Run heavy models**  
-   - Run `run_rl_dl_ml_colab.ipynb` to train/evaluate:
-     - **RL**: Volume PPO, Pattern PPO (stable-baselines3)
-     - **DL**: Pattern LSTM (PyTorch)
-     - **ML**: Regime classifier (sklearn), pattern ML classifier
-     - **Monte Carlo Pro**: Strategy robustness (10k+ iterations)
+   - **`run_rl_dl_ml_colab.ipynb`** — Project RL/DL/ML agents + Monte Carlo (synthetic or uploaded OHLCV).
+   - **`us30_model_research.ipynb`** — US30 (^DJI) research pipeline from [Workflow_colab.md](../Workflow_colab.md): yfinance data, feature engineering, walk-forward CV, RF/SVM/LSTM/PPO comparison, MAE/RMSE/Sharpe.
 
 ## File Layout
 
 | File | Purpose |
 |------|--------|
 | `README.md` | This file |
-| `requirements-colab.txt` | Pip dependencies for Colab (torch, sb3, gym, sklearn, etc.) |
+| `CONNECT_COLAB_SSH.md` | **Connect Cursor to Colab via SSH** (colab-ssh, Remote-SSH) |
+| `requirements-colab.txt` | Pip dependencies (torch, sb3, gym, yfinance, pandas_ta, tensorflow, etc.) |
 | `setup_colab.ipynb` | One-time setup: GPU check, clone repo, `pip install`, `sys.path` |
-| `run_rl_dl_ml_colab.ipynb` | Run all RL/DL/ML/Monte Carlo workloads with synthetic or uploaded data |
+| `run_rl_dl_ml_colab.ipynb` | RL/DL/ML/Monte Carlo with synthetic or uploaded data |
+| `us30_model_research.ipynb` | **US30 pipeline**: load ^DJI, preprocess, features, ML/DL/RL, compare, save to Drive |
 
 ## Syncing Your Repo in Colab
 

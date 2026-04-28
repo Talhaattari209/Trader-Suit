@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Suite — Architecture & UML Explorer</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1e2530;
+    --accent: #00d9ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --accent5: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(90deg, #0a0c10 0%, #111827 40%, #0a0c10 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+  .title {
+    font-size: 18px;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .badge {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent3);
+    border: 1px solid var(--accent3);
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  /* TAB BAR */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+    gap: 2px;
+    padding: 0 8px;
+  }
+  .tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    color: var(--muted);
+    transition: all 0.15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    letter-spacing: 0.5px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* CONTENT */
+  .panels { flex: 1; overflow: hidden; position: relative; }
+  .panel {
+    display: none;
+    height: 100%;
+    overflow-y: auto;
+    padding: 24px;
+    animation: fadeIn 0.2s ease;
+  }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+  /* GRID */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .card.green::before { background: linear-gradient(90deg, var(--accent3), #059669); }
+  .card.amber::before { background: linear-gradient(90deg, var(--accent4), #d97706); }
+  .card.red::before { background: linear-gradient(90deg, var(--accent5), #dc2626); }
+  .card.purple::before { background: linear-gradient(90deg, var(--accent2), #6d28d9); }
+
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .card.green .card-title { color: var(--accent3); }
+  .card.amber .card-title { color: var(--accent4); }
+  .card.red .card-title { color: var(--accent5); }
+  .card.purple .card-title { color: #a78bfa; }
+
+  /* SECTION HEADERS */
+  .section-header {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-header:first-child { margin-top: 0; }
+  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* DIAGRAM WRAPPER */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  .diagram-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* PIPELINE */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 16px 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .pipe-node {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .pipe-node.agent { border-color: var(--accent); color: var(--accent); }
+  .pipe-node.tool { border-color: var(--accent3); color: var(--accent3); }
+  .pipe-node.store { border-color: var(--accent4); color: var(--accent4); }
+  .pipe-arrow { flex-shrink: 0; color: var(--muted); font-size: 18px; padding: 0 6px; }
+
+  /* COMPONENT GRID */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .comp-box {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 14px;
+    border-left: 3px solid var(--border);
+  }
+  .comp-box-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .comp-box-files {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+
+  /* METHOD LIST */
+  .method-list {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 2;
+    color: var(--text);
+  }
+  .method-list .m { color: var(--accent3); }
+  .method-list .p { color: var(--accent4); }
+  .method-list .c { color: var(--accent); }
+
+  /* STATES */
+  .states { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .state-chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid;
+  }
+  .sc-idle { border-color: var(--muted); color: var(--muted); }
+  .sc-run { border-color: var(--accent3); color: var(--accent3); background: rgba(16,185,129,0.1); }
+  .sc-pause { border-color: var(--accent4); color: var(--accent4); background: rgba(245,158,11,0.1); }
+  .sc-stop { border-color: var(--muted); color: var(--muted); }
+  .sc-error { border-color: var(--accent5); color: var(--accent5); background: rgba(239,68,68,0.1); }
+  .sc-approve { border-color: var(--accent3); color: var(--accent3); }
+  .sc-flag { border-color: var(--accent4); color: var(--accent4); }
+  .sc-reject { border-color: var(--accent5); color: var(--accent5); }
+  .sc-draft { border-color: var(--accent2); color: #a78bfa; }
+  .sc-prod { border-color: var(--accent); color: var(--accent); }
+
+  /* TABLE */
+  .flow-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .flow-table th {
+    background: var(--surface2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    vertical-align: top;
+  }
+  .flow-table tr:last-child td { border-bottom: none; }
+  .fc { color: var(--accent); }
+  .ft { color: var(--accent3); }
+  .fv { color: var(--accent4); }
+
+  /* HERO */
+  .hero { text-align: center; padding: 32px 0 24px; }
+  .hero h1 {
+    font-size: 34px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .hero p { color: var(--muted); font-size: 14px; max-width: 580px; margin: 0 auto 24px; line-height: 1.7; }
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .ov-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: left;
+  }
+  .ov-num { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--accent); }
+  .ov-label { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  p { line-height: 1.7; color: var(--text); font-size: 13px; margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  li { font-size: 13px; line-height: 2; color: var(--text); }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SRS v1.0</div>
+  <div class="title">Alpha FTE Trading Suite — Architecture & UML Explorer</div>
+  <div class="badge">● LIVE DOCS</div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('overview',this)">01 Overview</button>
+  <button class="tab" onclick="show('actors',this)">02 Actors & Use Cases</button>
+  <button class="tab" onclick="show('pipeline',this)">03 Agent Pipeline</button>
+  <button class="tab" onclick="show('components',this)">04 Components</button>
+  <button class="tab" onclick="show('classes',this)">05 Class Diagram</button>
+  <button class="tab" onclick="show('sequence',this)">06 Sequence</button>
+  <button class="tab" onclick="show('activity',this)">07 Activity</button>
+  <button class="tab" onclick="show('states',this)">08 States</button>
+  <button class="tab" onclick="show('dataflow',this)">09 Data Flow</button>
+  <button class="tab" onclick="show('deployment',this)">10 Deployment</button>
+  <button class="tab" onclick="show('nfr',this)">11 NFR & Issues</button>
+</div>
+
+<div class="panels">
+
+<!-- ==================== 01 OVERVIEW ==================== -->
+<div id="panel-overview" class="panel active">
+  <div class="hero">
+    <h1>Alpha FTE Trading Suite</h1>
+    <p>An AI-agent–driven research pipeline that discovers alpha hypotheses, generates strategy code via LLM, validates via Monte Carlo simulation, and publishes to production — with a human-in-the-loop approval gate throughout.</p>
+  </div>
+  <div class="overview-grid">
+    <div class="ov-card"><div class="ov-num">3</div><div class="ov-label">Core agents<br>Librarian → Strategist → Killer</div></div>
+    <div class="ov-card"><div class="ov-num" style="color:var(--accent2)">8+</div><div class="ov-label">Tool modules<br>MC Pro, Indicators, Metrics…</div></div>
+    <div class="ov-card"><div class="ov-num" style="color:var(--accent3)">REST</div><div class="ov-label">FastAPI backend<br>+ Streamlit dashboard</div></div>
+    <div class="ov-card"><div class="ov-num" style="color:var(--accent4)">JSON</div><div class="ov-label">Filesystem persistence<br>DataStore/ (no DB needed)</div></div>
+    <div class="ov-card"><div class="ov-num" style="color:#ec4899">PPO</div><div class="ov-label">RL edge (SB3 + Gym)<br>volume_rl_agent.py</div></div>
+    <div class="ov-card"><div class="ov-num" style="color:#a78bfa">LSTM</div><div class="ov-label">DL pattern detector<br>PyTorch, 3-class</div></div>
+  </div>
+
+  <div class="section-header" style="margin-top:32px">Core Responsibilities</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Market Data</div>
+      <ul>
+        <li>CSV tick/OHLCV ingest (US30, EURUSD)</li>
+        <li>Alpaca broker connector (live)</li>
+        <li>Feature normalisation for RL</li>
+        <li>Returns series for Monte Carlo</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <div class="card-title">Research Pipeline</div>
+      <ul>
+        <li>Vault ideation (Needs_Action/)</li>
+        <li>LLM hypothesis structuring</li>
+        <li>LLM strategy code generation</li>
+        <li>Monte Carlo kill/approve logic</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <div class="card-title">Execution & Observability</div>
+      <ul>
+        <li>REST API (FastAPI :8000)</li>
+        <li>HITL approval (file-move gate)</li>
+        <li>Alpaca order routing</li>
+        <li>Risk Audit Logs (Markdown)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 02 ACTORS ==================== -->
+<div id="panel-actors" class="panel">
+  <div class="section-header">System Actors</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Human Actors</div>
+      <table class="flow-table">
+        <tr><th>Actor</th><th>Interaction</th></tr>
+        <tr><td class="fc">Trader / Operator</td><td>Writes alpha ideas to Needs_Action/, approves strategies via dashboard, monitors P&L</td></tr>
+        <tr><td class="fc">Developer</td><td>Edits drafts, configures ComputationBudget, deploys agents, extends edges</td></tr>
+      </table>
+    </div>
+    <div class="card purple">
+      <div class="card-title">AI Agents</div>
+      <table class="flow-table">
+        <tr><th>Agent</th><th>Role</th></tr>
+        <tr><td class="fc">LibrarianAgent</td><td>Polls vault, structures research plans via LLM, deduplicates via TF-IDF</td></tr>
+        <tr><td class="fc">StrategistAgent</td><td>Reads plans, emits Python BaseStrategy code via LLM</td></tr>
+        <tr><td class="fc">KillerAgent</td><td>Validates drafts via Monte Carlo, decides APPROVE / FLAG / REJECT</td></tr>
+      </table>
+    </div>
+    <div class="card green">
+      <div class="card-title">External Services</div>
+      <table class="flow-table">
+        <tr><th>Service</th><th>Protocol</th></tr>
+        <tr><td class="fc">Alpaca Markets</td><td>REST + WebSocket — orders, quotes, account info</td></tr>
+        <tr><td class="fc">Gemini LLM</td><td>HTTPS async — default LLM for agents</td></tr>
+        <tr><td class="fc">Anthropic Claude</td><td>HTTPS async — optional alternative LLM</td></tr>
+        <tr><td class="fc">CSV Market Data</td><td>File I/O — US30 / EURUSD tick CSVs</td></tr>
+      </table>
+    </div>
+    <div class="card amber">
+      <div class="card-title">Data Stores (Actors)</div>
+      <table class="flow-table">
+        <tr><th>Store</th><th>Contents</th></tr>
+        <tr><td class="fc">DataStore/</td><td>alphas.json, workflow_state.json, mc_audit_log.json, strategies.json</td></tr>
+        <tr><td class="fc">AI_Employee_Vault/</td><td>Needs_Action/, Plans/, Logs/ — Obsidian markdown vault</td></tr>
+        <tr><td class="fc">models/</td><td>drafts/ (candidates), production/ (approved), graveyard/ (rejected)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-header">Use Case Diagram</div>
+  <div class="diagram-wrap">
+    <div class="diagram-label">Mermaid — Use Cases</div>
+    <div class="mermaid">
+graph LR
+  T(["👤 Trader"])
+  D(["👨‍💻 Developer"])
+  A(["🏦 Alpaca API"])
+  L(["🤖 LLM Service"])
+
+  T --> UC1["Write Alpha Idea\n(Needs_Action/*.md)"]
+  T --> UC3["Approve Strategy\n(HITL gate)"]
+  T --> UC4["Monitor Dashboard\n(Streamlit :8501)"]
+  T --> UC5["Run Backtest\n(GET /workflow/state)"]
+  T --> UC6["View Risk Audit\n(Vault Logs/)"]
+
+  D --> UC7["Configure Budget\n(COMPUTE_PROFILE)"]
+  D --> UC8["Extend Edges/Models\n(edge_registry)"]
+
+  UC1 -->|triggers| LA["LibrarianAgent"]
+  LA -->|calls| L
+  LA -->|writes| Plans["Plans/*.md"]
+  Plans -->|triggers| SA["StrategistAgent"]
+  SA -->|calls| L
+  SA -->|writes| Drafts["models/drafts/*.py"]
+  Drafts -->|triggers| KA["KillerAgent"]
+  KA -->|MC validation| UC6
+
+  UC4 --> API["FastAPI :8000"]
+  UC5 --> API
+  API --> A
+
+  style T fill:#0ea5e9,stroke:#0284c7,color:#fff
+  style D fill:#7c3aed,stroke:#6d28d9,color:#fff
+  style A fill:#10b981,stroke:#059669,color:#fff
+  style L fill:#a78bfa,stroke:#7c3aed,color:#fff
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 03 PIPELINE ==================== -->
+<div id="panel-pipeline" class="panel">
+  <div class="section-header">Ralph Wiggum Loop — Agent Pipeline</div>
+  <p>Each idea travels through a 3-agent assembly line. The vault filesystem is the message bus between agents — no direct function calls between agents.</p>
+
+  <div class="pipeline">
+    <div class="pipe-node" style="border-color:#ec4899;color:#ec4899">Needs_Action/<br><small>*.md ideas</small></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node agent">LibrarianAgent</div>
+    <div class="pipe-arrow">→ LLM →</div>
+    <div class="pipe-node store">Plans/<br><small>RESEARCH_PLAN_*.md</small></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node agent">StrategistAgent</div>
+    <div class="pipe-arrow">→ LLM + US30 →</div>
+    <div class="pipe-node store">models/drafts/<br><small>strategy_*.py</small></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-node agent">KillerAgent</div>
+    <div class="pipe-arrow">→ MC Pro →</div>
+    <div class="pipe-node tool">APPROVE ✓<br>or REJECT ✗</div>
+  </div>
+
+  <div class="diagram-wrap" style="margin-top:20px">
+    <div class="diagram-label">Agent Pipeline — Detailed Flowchart</div>
+    <div class="mermaid">
+flowchart TD
+  A0(["📂 AI_Employee_Vault\nNeeds_Action/*.md"]) --> A1
+
+  subgraph A1["LibrarianAgent (perceive → reason → act)"]
+    direction TB
+    LA1["perceive(): scan Needs_Action/\n for unprocessed .md files"] --> LA2
+    LA2["reason(): find_similar_alphas()\n TF-IDF dedup via FilesystemStore"] --> LA3
+    LA3["LLM.complete(SYSTEM_LIBRARIAN\n + idea_text + similarity_context)"] --> LA4
+    LA4["act(): write RESEARCH_PLAN_slug.md\n save_alpha() + advance_workflow_step()"]
+  end
+
+  A1 --> B0(["📄 Plans/RESEARCH_PLAN_*.md"])
+  B0 --> A2
+
+  subgraph A2["StrategistAgent (perceive → reason → act)"]
+    direction TB
+    SA1["perceive(): scan Plans/\n for unprocessed RESEARCH_PLAN files"] --> SA2
+    SA2["_get_data_context(): US30Loader\n row count + schema info"] --> SA3
+    SA3["detect_all_price_levels(1H)\n inject FVG + liquidity zones"] --> SA4
+    SA4["LLM.complete(SYSTEM_STRATEGIST\n + plan + data_context)"] --> SA5
+    SA5["act(): write strategy_name.py to drafts/\n save_strategy_metadata()"]
+  end
+
+  A2 --> C0(["🐍 models/drafts/strategy_*.py"])
+  C0 --> A3
+
+  subgraph A3["KillerAgent (perceive → reason → act)"]
+    direction TB
+    KA1["perceive(): load latest draft\n + US30 returns Series"] --> KA2
+    KA2["MonteCarloPro.simulate_paths(returns)\n inject_execution_friction(paths)"] --> KA3
+    KA3["stress_test_regimes()\n parameter_stability_tests()"] --> KA4
+    KA4["get_decision_metrics()\n → alpha_prob, sharpe, max_dd"] --> KA5
+    KA5{"alpha_prob ≥ threshold?"} -->|YES| KA6["APPROVE\n advance_workflow_step('approved')"]
+    KA5 -->|NO| KA7["REJECT\n post-mortem to graveyard/"]
+    KA6 --> KA8["write Risk Audit .md to Vault Logs/\n log_mc_run() to DataStore"]
+    KA7 --> KA8
+  end
+
+  A3 --> D0(["✅ models/production/\nor ☠️ graveyard/"])
+
+  style A1 fill:#0c1a2e,stroke:#00d9ff
+  style A2 fill:#1a0c2e,stroke:#7c3aed
+  style A3 fill:#0c2e0c,stroke:#10b981
+    </div>
+  </div>
+
+  <div class="section-header">Agent Method Interfaces</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">LibrarianAgent</div>
+      <div class="method-list">
+        <div><span class="c">class</span> LibrarianAgent(BaseAgent)</div>
+        <div><span class="m">+ perceive()</span> → list[Path]</div>
+        <div><span class="m">+ reason(plans)</span> → str</div>
+        <div><span class="m">+ act(plan_text)</span> → None</div>
+        <div><span class="p">– _load_processed()</span> → set</div>
+        <div><span class="p">– _mark_processed(name)</span></div>
+        <div style="color:var(--muted);font-size:10px;margin-top:8px">deps: LLMClient, FilesystemStore</div>
+      </div>
+    </div>
+    <div class="card purple">
+      <div class="card-title">StrategistAgent</div>
+      <div class="method-list">
+        <div><span class="c">class</span> StrategistAgent(BaseAgent)</div>
+        <div><span class="m">+ perceive()</span> → list[Path]</div>
+        <div><span class="m">+ reason(plan)</span> → str (Python)</div>
+        <div><span class="m">+ act(code)</span> → None</div>
+        <div><span class="p">– _get_data_context()</span> → str</div>
+        <div><span class="p">– _load_processed()</span> → set</div>
+        <div style="color:var(--muted);font-size:10px;margin-top:8px">deps: LLMClient, US30Loader, PLD</div>
+      </div>
+    </div>
+    <div class="card green">
+      <div class="card-title">KillerAgent</div>
+      <div class="method-list">
+        <div><span class="c">class</span> KillerAgent(BaseAgent)</div>
+        <div><span class="m">+ perceive()</span> → DataFrame</div>
+        <div><span class="m">+ reason(returns)</span> → dict</div>
+        <div><span class="m">+ act(metrics)</span> → str verdict</div>
+        <div><span class="p">– _load_latest_strategy()</span></div>
+        <div><span class="p">– _run_backtest(strategy, df)</span> → Series</div>
+        <div style="color:var(--muted);font-size:10px;margin-top:8px">deps: MonteCarloPro, US30Loader, FS</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 04 COMPONENTS ==================== -->
+<div id="panel-components" class="panel">
+  <div class="section-header">Module / Component Map</div>
+  <div class="comp-grid">
+    <div class="comp-box" style="border-color:var(--accent)">
+      <div class="comp-box-name" style="color:var(--accent)">src/api/</div>
+      <div class="comp-box-files">main.py — FastAPI app, mock endpoints<br>workflow_routes.py — alpha/MC/vault REST<br>alpaca_service.py — broker connector</div>
+    </div>
+    <div class="comp-box" style="border-color:#a78bfa">
+      <div class="comp-box-name" style="color:#a78bfa">src/agents/</div>
+      <div class="comp-box-files">base_agent.py — ABC (perceive/reason/act)<br>librarian_agent.py<br>strategist_agent.py<br>killer_agent.py<br>risk_*.py, reporter.py</div>
+    </div>
+    <div class="comp-box" style="border-color:var(--accent3)">
+      <div class="comp-box-name" style="color:var(--accent3)">src/tools/</div>
+      <div class="comp-box-files">llm_client.py — Gemini/Anthropic<br>monte_carlo_pro.py — MC simulation<br>indicator_engine.py — pandas_ta wrapper<br>performance_metrics.py — Sharpe/Sortino<br>price_level_detector.py — FVG/liquidity</div>
+    </div>
+    <div class="comp-box" style="border-color:#ec4899">
+      <div class="comp-box-name" style="color:#ec4899">src/data/</div>
+      <div class="comp-box-files">us30_loader.py — CSV + connector ingest<br>volume_loader.py<br>preprocessor*.py — normalisation</div>
+    </div>
+    <div class="comp-box" style="border-color:var(--accent4)">
+      <div class="comp-box-name" style="color:var(--accent4)">src/edges/</div>
+      <div class="comp-box-files">volume_based/volume_rl_agent.py (PPO)<br>pattern_based/pattern_detector_dl.py (LSTM)<br>pattern_detector_ml.py<br>edge_registry.py — catalogue</div>
+    </div>
+    <div class="comp-box" style="border-color:#06b6d4">
+      <div class="comp-box-name" style="color:#06b6d4">src/dashboard/</div>
+      <div class="comp-box-files">app.py — home + P&L page<br>components.py — shared widgets + charts<br>pages/1_Alpha_Idea_Lab.py<br>pages/4_Strategy_Library.py<br>pages/5_Backtester_Killer.py</div>
+    </div>
+    <div class="comp-box" style="border-color:#8b5cf6">
+      <div class="comp-box-name" style="color:#8b5cf6">src/persistence/</div>
+      <div class="comp-box-files">filesystem_store.py — single JSON store<br>alphas, strategies, MC log, workflow state<br>TF-IDF similarity search</div>
+    </div>
+    <div class="comp-box" style="border-color:var(--muted)">
+      <div class="comp-box-name" style="color:var(--muted)">src/config/</div>
+      <div class="comp-box-files">computation_budget.py<br>_Budget frozen dataclass<br>COMPUTE_PROFILE env var switch</div>
+    </div>
+    <div class="comp-box" style="border-color:#f472b6">
+      <div class="comp-box-name" style="color:#f472b6">src/models/</div>
+      <div class="comp-box-files">base_strategy.py — ABC interface<br>drafts/ — LLM-generated candidates<br>production/ — approved strategies<br>graveyard/ — rejected + post-mortem</div>
+    </div>
+    <div class="comp-box" style="border-color:#fbbf24">
+      <div class="comp-box-name" style="color:#fbbf24">src/watchers/</div>
+      <div class="comp-box-files">base_watcher.py — ABC<br>check_for_updates()<br>create_action_file()<br>run() polling loop</div>
+    </div>
+    <div class="comp-box" style="border-color:#34d399">
+      <div class="comp-box-name" style="color:#34d399">DataStore/ (runtime)</div>
+      <div class="comp-box-files">alphas.json<br>strategies.json<br>workflow_state.json<br>mc_audit_log.json<br>debug.log</div>
+    </div>
+    <div class="comp-box" style="border-color:#818cf8">
+      <div class="comp-box-name" style="color:#818cf8">AI_Employee_Vault/</div>
+      <div class="comp-box-files">Needs_Action/*.md (inbox)<br>Plans/*.md (structured plans)<br>Logs/*.md (risk audits)<br>Research_Data/*.md (memory)</div>
+    </div>
+  </div>
+
+  <div class="section-header">Dependency Graph</div>
+  <div class="diagram-wrap">
+    <div class="diagram-label">Component Dependencies — Mermaid</div>
+    <div class="mermaid">
+graph TD
+  Dashboard["📊 Streamlit Dashboard\n:8501"] -->|HTTP| API
+  API["⚡ FastAPI\n:8000"] --> WF["workflow_routes"]
+  API --> AlpSvc["alpaca_service"]
+
+  WF --> FS["FilesystemStore"]
+  WF --> MCP["MonteCarloPro"]
+  WF --> IE["indicator_engine"]
+  WF --> PLD["price_level_detector"]
+
+  LibA["LibrarianAgent"] --> LLM["LLMClient\n(Gemini / Anthropic)"]
+  LibA --> FS
+
+  StrA["StrategistAgent"] --> LLM
+  StrA --> US30["US30Loader"]
+  StrA --> PLD
+  StrA --> FS
+
+  KillA["KillerAgent"] --> MCP
+  KillA --> US30
+  KillA --> PLD
+  KillA --> FS
+
+  MCP --> IE
+  MCP --> CB["ComputationBudget\n_Budget frozen dataclass"]
+
+  US30 --> CB
+  IE --> TA["pandas_ta_classic\n(vendored in Technical Indicators/)"]
+
+  VolRL["VolumeRLAgent\n(PPO / SB3)"] --> CB
+  PatDL["PatternLSTM\n(PyTorch)"] --> CB
+
+  style API fill:#0c1a2e,stroke:#00d9ff
+  style LibA fill:#1a0c2e,stroke:#7c3aed
+  style StrA fill:#1a0c2e,stroke:#7c3aed
+  style KillA fill:#0c2e0c,stroke:#10b981
+  style Dashboard fill:#0c1e2e,stroke:#06b6d4
+  style FS fill:#1e1a0c,stroke:#f59e0b
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 05 CLASS DIAGRAM ==================== -->
+<div id="panel-classes" class="panel">
+  <div class="section-header">Class Diagram — Agent & Core Tool Hierarchy</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+classDiagram
+  class BaseAgent {
+    <<abstract>>
+    +perceive()
+    +reason()
+    +act()
+  }
+  class LibrarianAgent {
+    -vault_path: Path
+    -llm: BaseLLMClient
+    -store: FilesystemStore
+    +perceive() list
+    +reason() str
+    +act() None
+    -_load_processed() set
+    -_mark_processed(name) None
+  }
+  class StrategistAgent {
+    -vault_path: Path
+    -llm: BaseLLMClient
+    -loader: US30Loader
+    +perceive() list
+    +reason() str
+    +act() None
+    -_get_data_context() str
+    -_load_processed() set
+  }
+  class KillerAgent {
+    -loader: US30Loader
+    -mc: MonteCarloPro
+    +perceive() DataFrame
+    +reason() dict
+    +act() str
+    -_load_latest_strategy() BaseStrategy
+    -_run_backtest(strat, df) Series
+  }
+  BaseAgent <|-- LibrarianAgent
+  BaseAgent <|-- StrategistAgent
+  BaseAgent <|-- KillerAgent
+
+  class BaseLLMClient {
+    <<abstract>>
+    +complete(prompt) str
+  }
+  class GeminiLLMClient {
+    -api_key: str
+    -model: str
+    +complete(prompt) str
+  }
+  class AnthropicLLMClient {
+    -api_key: str
+    -model: str
+    +complete(prompt) str
+  }
+  BaseLLMClient <|-- GeminiLLMClient
+  BaseLLMClient <|-- AnthropicLLMClient
+
+  class MonteCarloPro {
+    -n_paths: int
+    -budget: _Budget
+    +simulate_paths(returns) ndarray
+    +inject_execution_friction(paths) ndarray
+    +stress_test_regimes(returns) dict
+    +parameter_stability_tests(returns) dict
+    +indicator_parameter_sweep(df) dict
+    +get_decision_metrics(paths) dict
+  }
+
+  class FilesystemStore {
+    -data_dir: Path
+    +save_alpha(alpha) None
+    +find_similar_alphas(text) list
+    +save_strategy_metadata(meta) None
+    +log_mc_run(results) None
+    +get_workflow_state() dict
+    +set_workflow_state(state) None
+    +advance_workflow_step(step) None
+  }
+
+  class US30Loader {
+    -budget: _Budget
+    +load_clean_data(path) DataFrame
+    +load_from_connector(conn) DataFrame
+    +get_rl_features(df) ndarray
+    +get_returns_series(df) Series
+  }
+
+  class BaseStrategy {
+    <<abstract>>
+    +generate_signals(df) Series
+  }
+
+  LibrarianAgent --> BaseLLMClient
+  LibrarianAgent --> FilesystemStore
+  StrategistAgent --> BaseLLMClient
+  StrategistAgent --> US30Loader
+  StrategistAgent --> FilesystemStore
+  KillerAgent --> MonteCarloPro
+  KillerAgent --> US30Loader
+  KillerAgent --> FilesystemStore
+  KillerAgent --> BaseStrategy
+    </div>
+  </div>
+
+  <div class="section-header">Edge & Infrastructure Classes</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+classDiagram
+  class PatternLSTM {
+    -input_size: int
+    -hidden_size: int
+    -num_layers: int
+    -lstm: LSTM
+    -fc: Linear
+    +forward(x Tensor) Tensor
+  }
+  class VolumeEnv {
+    -df: DataFrame
+    -returns: Series
+    -current_step: int
+    +reset() ndarray
+    +step(action) tuple
+    +render() None
+  }
+  class BaseWatcher {
+    <<abstract>>
+    -needs_action_path: Path
+    -poll_interval: int
+    +check_for_updates() list
+    +create_action_file(item) None
+    +run_once() None
+    +run() None
+  }
+  class _Budget {
+    <<frozen dataclass>>
+    +mc_n_paths: int
+    +data_max_bars: int
+    +rl_timesteps: int
+    +dl_epochs: int
+    +chart_max_candles: int
+    +agent_poll_interval_s: int
+    +similarity_top_k: int
+  }
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 06 SEQUENCE ==================== -->
+<div id="panel-sequence" class="panel">
+  <div class="section-header">Sequence — Alpha Idea → Approved Strategy</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+sequenceDiagram
+  actor Trader
+  participant Vault as AI_Employee_Vault
+  participant Lib as LibrarianAgent
+  participant LLM as LLM Service
+  participant FS as FilesystemStore
+  participant Str as StrategistAgent
+  participant US30 as US30Loader
+  participant Kill as KillerAgent
+  participant MC as MonteCarloPro
+
+  Trader->>Vault: write idea_wf_xxxx.md to Needs_Action/
+  Lib->>Vault: perceive() — scan Needs_Action/*.md
+  Lib->>FS: find_similar_alphas(idea_text) [TF-IDF]
+  FS-->>Lib: top-k similar alphas
+  Lib->>LLM: complete(SYSTEM_LIBRARIAN + idea + similarity)
+  LLM-->>Lib: structured RESEARCH_PLAN markdown
+  Lib->>Vault: write Plans/RESEARCH_PLAN_slug.md
+  Lib->>FS: save_alpha() + advance_workflow_step('researched')
+
+  Str->>Vault: perceive() — scan Plans/*.md
+  Str->>US30: load_clean_data() — row count context
+  Str->>US30: detect_all_price_levels(1H)
+  Str->>LLM: complete(SYSTEM_STRATEGIST + plan + data_context)
+  LLM-->>Str: Python BaseStrategy implementation
+  Str->>Vault: write models/drafts/strategy_name.py
+  Str->>FS: save_strategy_metadata() + advance_workflow_step('coded')
+
+  Kill->>Vault: perceive() — load latest draft
+  Kill->>US30: get_returns_series()
+  Kill->>MC: simulate_paths(returns)
+  MC-->>Kill: ndarray — simulated equity paths
+  Kill->>MC: stress_test_regimes(returns)
+  MC-->>Kill: regime stress metrics dict
+  Kill->>MC: parameter_stability_tests(returns)
+  MC-->>Kill: stability dict
+  Kill->>MC: get_decision_metrics(paths)
+  MC-->>Kill: {alpha_prob, sharpe, max_dd, verdict}
+  Kill->>FS: log_mc_run(results)
+  Kill->>Vault: write Logs/Risk_Audit_*.md
+
+  alt APPROVED
+    Kill->>Vault: move draft → models/production/
+    Kill-->>Trader: APPROVE notification
+  else REJECTED
+    Kill->>Vault: move draft → graveyard/
+    Kill-->>Trader: REJECT + post-mortem
+  end
+    </div>
+  </div>
+
+  <div class="section-header">Sequence — Dashboard to FastAPI</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+sequenceDiagram
+  actor Trader
+  participant Dash as Streamlit :8501
+  participant API as FastAPI :8000
+  participant WF as workflow_routes
+  participant FS as FilesystemStore
+  participant Alp as AlpacaService
+
+  Trader->>Dash: open browser
+  Dash->>API: GET /system/status
+  API->>Alp: check_connection()
+  Alp-->>API: connected | error
+  API-->>Dash: SystemStatus JSON
+
+  Dash->>API: GET /workflow/state
+  API->>WF: workflow_state()
+  WF->>FS: get_workflow_state()
+  FS-->>WF: current phase + completed steps
+  WF-->>Dash: WorkflowState JSON
+
+  Trader->>Dash: submit new alpha hypothesis
+  Dash->>API: POST /workflow/start {hypothesis, ticker}
+  API->>WF: workflow_start(req)
+  WF->>FS: write idea_wf_*.md to Needs_Action/
+  WF->>FS: set_workflow_state(PENDING)
+  WF-->>Dash: {workflow_id, status: "pending"}
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 07 ACTIVITY ==================== -->
+<div id="panel-activity" class="panel">
+  <div class="section-header">Activity — Monte Carlo Validation (KillerAgent)</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+flowchart TD
+  A(["Start: KillerAgent.act()"])
+  A --> B["_load_latest_strategy()\nfrom models/drafts/"]
+  B --> C["US30Loader.load_clean_data()\n→ get_returns_series()"]
+  C --> D["MonteCarloPro.simulate_paths(returns)\nn_paths from ComputationBudget"]
+  D --> E["inject_execution_friction(paths)\nslippage + latency shocks"]
+  E --> F["stress_test_regimes(returns)\ntren ding / ranging / crisis multipliers"]
+  F --> G["parameter_stability_tests(returns)\nnudge params ±20%"]
+  G --> H["get_decision_metrics(paths)\n→ alpha_prob, sharpe, max_dd"]
+  H --> I{"alpha_prob ≥ threshold?"}
+  I -->|YES| J["APPROVE\nwrite to audit log\nadvance_workflow_step('approved')"]
+  I -->|NO| K["REJECT\npost-mortem\nadvance_workflow_step('rejected')"]
+  J --> L["Write Risk Audit .md to Vault Logs/"]
+  K --> L
+  L --> M["log_mc_run() → DataStore/mc_audit_log.json"]
+  J --> N["Move draft → models/production/"]
+  K --> O["Move draft → graveyard/"]
+  N --> P(["End — notify Trader"])
+  O --> P
+
+  style I fill:#1a2e1a,stroke:#10b981
+  style J fill:#0c2e0c,stroke:#10b981
+  style K fill:#2e0c0c,stroke:#ef4444
+    </div>
+  </div>
+
+  <div class="section-header">Activity — Indicator Parameter Sweep</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+flowchart LR
+  S(["indicator_parameter_sweep(df)"])
+  S --> A["For each indicator in INDICATOR_SPECS"]
+  A --> B["Sample random params\nfrom spec param_ranges"]
+  B --> C["compute_indicator(df, name, params)\n→ pandas_ta_classic"]
+  C --> D["_default_signal_returns()\nheuristic crossover → bar returns"]
+  D --> E["simulate_paths(returns)"]
+  E --> F["get_decision_metrics()"]
+  F --> G{"More indicators?"}
+  G -->|YES| A
+  G -->|NO| H["Return sweep_results dict\n{indicator: metrics}"]
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 08 STATES ==================== -->
+<div id="panel-states" class="panel">
+  <div class="section-header">State Machine — Workflow Lifecycle</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+stateDiagram-v2
+  [*] --> IDLE
+  IDLE --> PENDING : POST /workflow/start\n(idea written to Needs_Action/)
+  PENDING --> RESEARCHING : LibrarianAgent.perceive() picks up idea
+  RESEARCHING --> PLAN_READY : RESEARCH_PLAN_*.md written to Plans/
+  PLAN_READY --> CODING : StrategistAgent.perceive() picks up plan
+  CODING --> DRAFT_READY : strategy_*.py written to models/drafts/
+  DRAFT_READY --> VALIDATING : KillerAgent runs MonteCarloPro
+  VALIDATING --> APPROVED : alpha_prob >= threshold
+  VALIDATING --> REJECTED : alpha_prob < threshold
+  APPROVED --> PRODUCTION : strategy moved to production/
+  REJECTED --> GRAVEYARD : strategy moved to graveyard/
+  GRAVEYARD --> IDLE : post-mortem logged
+  PRODUCTION --> IDLE : strategy archived
+    </div>
+  </div>
+
+  <div class="section-header">State Machine — Order Lifecycle (Alpaca)</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+stateDiagram-v2
+  [*] --> CREATED : Signal generated by strategy
+  CREATED --> SUBMITTED : AlpacaService.submit_order()
+  SUBMITTED --> FILLED : Exchange confirms full fill
+  SUBMITTED --> PARTIALLY_FILLED : Partial fill received
+  PARTIALLY_FILLED --> FILLED : Remaining qty filled
+  SUBMITTED --> CANCELLED : cancel_order() called
+  SUBMITTED --> REJECTED : Exchange rejects (risk/margin)
+  FILLED --> [*] : Portfolio updated, PnL recorded
+  CANCELLED --> [*]
+  REJECTED --> [*]
+    </div>
+  </div>
+
+  <div class="section-header">State Labels Quick Reference</div>
+  <div class="states">
+    <div class="state-chip sc-idle">IDLE</div>
+    <div class="state-chip sc-run">RUNNING</div>
+    <div class="state-chip sc-pause">PAUSED</div>
+    <div class="state-chip sc-stop">STOPPED</div>
+    <div class="state-chip sc-error">ERROR</div>
+    <div class="state-chip sc-draft">DRAFT</div>
+    <div class="state-chip sc-approve">APPROVED</div>
+    <div class="state-chip sc-flag">FLAGGED</div>
+    <div class="state-chip sc-reject">REJECTED</div>
+    <div class="state-chip sc-prod">PRODUCTION</div>
+  </div>
+</div>
+
+<!-- ==================== 09 DATA FLOW ==================== -->
+<div id="panel-dataflow" class="panel">
+  <div class="section-header">Data Flow — Market Data → Decision</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+flowchart TD
+  EXT1["🏦 Alpaca REST/WS\n(live quotes + account)"] --> AC["alpaca_service.py"]
+  EXT2["📁 CSV Files\n(US30 / EURUSD ticks)"] --> LD["US30Loader\nload_clean_data()"]
+
+  AC --> LD
+  LD --> NORM["Normalise OHLCV\ncolumn rename + datetime index"]
+  NORM --> CAP["Cap rows to\nComputationBudget.data_max_bars"]
+
+  CAP --> IE["indicator_engine\ncompute_indicator()"]
+  CAP --> PLD["price_level_detector\ndetect_all_price_levels()"]
+  CAP --> RLF["get_rl_features()\n→ MinMax scaled ndarray"]
+  CAP --> RET["get_returns_series()\n→ close-to-close % returns"]
+
+  IE --> CHART["components.build_trade_chart()\nPlotly candlestick + overlays"]
+  PLD --> CHART
+  PLD --> STRAT["StrategistAgent\n(price levels injected into LLM prompt)"]
+
+  RET --> MC["MonteCarloPro\nsimulate_paths()"]
+  RLF --> RL["VolumeEnv (Gym)\nPPO training on T4 GPU"]
+
+  MC --> KILL["KillerAgent\ndecision + audit log"]
+  KILL --> FS["FilesystemStore\nmc_audit_log.json"]
+
+  CHART --> DASH["Streamlit Dashboard"]
+  FS --> API["FastAPI /workflow/state\n/performance/{id}"]
+  API --> DASH
+    </div>
+  </div>
+
+  <div class="section-header">Data Store Reference</div>
+  <table class="flow-table">
+    <tr><th>Path</th><th>Format</th><th>Written By</th><th>Read By</th></tr>
+    <tr>
+      <td class="fc">DataStore/alphas.json</td><td>JSON array</td>
+      <td class="fv">LibrarianAgent → FilesystemStore.save_alpha()</td>
+      <td class="ft">find_similar_alphas() / GET /alphas</td>
+    </tr>
+    <tr>
+      <td class="fc">DataStore/strategies.json</td><td>JSON array</td>
+      <td class="fv">StrategistAgent → save_strategy_metadata()</td>
+      <td class="ft">GET /strategies, KillerAgent</td>
+    </tr>
+    <tr>
+      <td class="fc">DataStore/workflow_state.json</td><td>JSON object</td>
+      <td class="fv">FilesystemStore.set/advance_workflow_step()</td>
+      <td class="ft">GET /workflow/state, dashboard home</td>
+    </tr>
+    <tr>
+      <td class="fc">DataStore/mc_audit_log.json</td><td>JSON array</td>
+      <td class="fv">KillerAgent → log_mc_run()</td>
+      <td class="ft">GET /performance/{strategy_id}</td>
+    </tr>
+    <tr>
+      <td class="fc">Vault/Needs_Action/*.md</td><td>Markdown</td>
+      <td class="fv">Trader (manual) OR POST /workflow/start</td>
+      <td class="ft">LibrarianAgent.perceive()</td>
+    </tr>
+    <tr>
+      <td class="fc">Vault/Plans/*.md</td><td>Markdown</td>
+      <td class="fv">LibrarianAgent.act()</td>
+      <td class="ft">StrategistAgent.perceive()</td>
+    </tr>
+    <tr>
+      <td class="fc">models/drafts/strategy_*.py</td><td>Python</td>
+      <td class="fv">StrategistAgent.act()</td>
+      <td class="ft">KillerAgent._load_latest_strategy()</td>
+    </tr>
+    <tr>
+      <td class="fc">Vault/Logs/Risk_Audit_*.md</td><td>Markdown</td>
+      <td class="fv">KillerAgent.act()</td>
+      <td class="ft">Trader review / GET /vault/{path}</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ==================== 10 DEPLOYMENT ==================== -->
+<div id="panel-deployment" class="panel">
+  <div class="section-header">Deployment Architecture</div>
+  <div class="diagram-wrap">
+    <div class="mermaid">
+graph TB
+  subgraph LOCAL["💻 Local Windows Machine (editing only)"]
+    CURSOR["Cursor IDE\n(code editing)"]
+    ENV[".env\n(API keys — never committed)"]
+  end
+
+  subgraph COLAB["☁️ Google Colab — T4 GPU (compute)"]
+    direction TB
+    DRIVE["Google Drive mount\n/content/drive/MyDrive/Alpha_FTE_Project/"]
+
+    subgraph SRC["Source Code (synced via Remote-SSH)"]
+      API2["FastAPI :8000\n(uvicorn src.api.main:app)"]
+      AGENTS2["Agents\n(Librarian / Strategist / Killer)"]
+      EDGES2["Edges\n(PPO RL, LSTM DL)"]
+    end
+
+    subgraph STORE["Persistence (on Drive for durability)"]
+      DS["DataStore/\n(JSON files)"]
+      VAULT2["AI_Employee_Vault/\n(Markdown vault)"]
+      CKPT["model checkpoints\n(SB3 .zip, PyTorch .pt)"]
+    end
+
+    SRC --> STORE
+    DRIVE -.->|persistent| STORE
+  end
+
+  subgraph BROWSER["🌐 Browser (Trader)"]
+    STREAMLIT2["Streamlit Dashboard\n:8501"]
+  end
+
+  subgraph EXT["🌍 External APIs"]
+    ALPACA2["Alpaca Markets\nREST + WebSocket"]
+    GEMINI2["Gemini LLM API\n(default)"]
+    ANTHROPIC2["Anthropic Claude\n(optional)"]
+  end
+
+  CURSOR -->|"Remote-SSH / Colab Extension"| COLAB
+  STREAMLIT2 -->|"HTTP :8000"| API2
+  API2 --> ALPACA2
+  AGENTS2 --> GEMINI2
+  AGENTS2 --> ANTHROPIC2
+
+  style COLAB fill:#0a1a0a,stroke:#10b981
+  style LOCAL fill:#0a0c1a,stroke:#00d9ff
+  style EXT fill:#1a0a1a,stroke:#7c3aed
+  style BROWSER fill:#0a1a1a,stroke:#06b6d4
+    </div>
+  </div>
+
+  <div class="section-header">Compute Budget Profiles</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">local profile (COMPUTE_PROFILE=local)</div>
+      <table class="flow-table">
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td>mc_n_paths</td><td>200</td></tr>
+        <tr><td>data_max_bars</td><td>2,000</td></tr>
+        <tr><td>rl_timesteps</td><td>10,000</td></tr>
+        <tr><td>dl_epochs</td><td>10</td></tr>
+        <tr><td>chart_max_candles</td><td>500</td></tr>
+      </table>
+    </div>
+    <div class="card green">
+      <div class="card-title">colab profile (COMPUTE_PROFILE=colab)</div>
+      <table class="flow-table">
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td>mc_n_paths</td><td>5,000+</td></tr>
+        <tr><td>data_max_bars</td><td>50,000+</td></tr>
+        <tr><td>rl_timesteps</td><td>500,000+</td></tr>
+        <tr><td>dl_epochs</td><td>100+</td></tr>
+        <tr><td>chart_max_candles</td><td>2,000+</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 11 NFR ==================== -->
+<div id="panel-nfr" class="panel">
+  <div class="section-header">Non-Functional Requirements</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Performance</div>
+      <ul>
+        <li>All compute caps enforced via <code>ComputationBudget</code> — local runs finish in seconds</li>
+        <li>MC simulation is vectorised NumPy (no Python loops per path)</li>
+        <li>RL training capped at <code>CB.rl_timesteps</code> to avoid OOM on T4</li>
+        <li>Dashboard calls are lightweight HTTP — heavy work is async in agents</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <div class="card-title">Reliability</div>
+      <ul>
+        <li>All optional imports wrapped in <code>try/except ImportError</code> — SB3, torch, alpaca all degrade gracefully</li>
+        <li>MC route falls back to <code>_synthetic_mc_results()</code> if <code>MonteCarloPro</code> throws</li>
+        <li>FilesystemStore uses atomic JSON writes; agents re-scan on next poll if file corrupt</li>
+        <li><code>BaseWatcher</code> poll loop catches all exceptions and continues</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <div class="card-title">Scalability</div>
+      <ul>
+        <li>Multiple strategy drafts handled independently (filename-based isolation)</li>
+        <li><code>edge_registry.py</code> allows new edge modules without touching agents</li>
+        <li>Additional LLM providers added by subclassing <code>BaseLLMClient</code></li>
+        <li>Additional watchers added by subclassing <code>BaseWatcher</code></li>
+      </ul>
+    </div>
+    <div class="card amber">
+      <div class="card-title">Security</div>
+      <ul>
+        <li>API keys in <code>.env</code> — never committed (in <code>.gitignore</code>)</li>
+        <li>Live trades require manual file move to <code>Approved/</code> (HITL gate)</li>
+        <li>CORS configured on FastAPI — restrict origins in production</li>
+        <li>Zero-MQL: all execution logic in Python only</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-header" style="margin-top:20px">Known Issues & Bugs</div>
+  <div class="card red">
+    <div class="card-title">Issues to fix</div>
+    <table class="flow-table">
+      <tr><th>Location</th><th>Issue</th><th>Impact</th></tr>
+      <tr>
+        <td class="fc">KillerAgent.reason()</td>
+        <td>References <code>equity_curve</code> variable not always defined in scope</td>
+        <td class="fv">NameError on some strategy types</td>
+      </tr>
+      <tr>
+        <td class="fc">MonteCarloPro</td>
+        <td>No <code>.run()</code> method — <code>workflow_routes</code> always falls back to synthetic MC results</td>
+        <td class="fv">Real MC validation never runs via API</td>
+      </tr>
+      <tr>
+        <td class="fc">workflow_routes.py</td>
+        <td>Workflow step IDs not validated for consistency across agents</td>
+        <td class="fv">Dashboard may show incorrect phase</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section-header">Repository Folder Guide</div>
+  <table class="flow-table">
+    <tr><th>Path</th><th>Purpose</th></tr>
+    <tr><td class="fc">src/agents/</td><td>Librarian, Strategist, Killer + BaseAgent ABC (perceive/reason/act loop)</td></tr>
+    <tr><td class="fc">src/api/</td><td>FastAPI app + workflow REST routes + Alpaca broker connector</td></tr>
+    <tr><td class="fc">src/dashboard/</td><td>Streamlit multi-page app; components.py has all shared UI widgets</td></tr>
+    <tr><td class="fc">src/data/</td><td>US30/EURUSD data loading, normalisation, RL feature prep</td></tr>
+    <tr><td class="fc">src/edges/</td><td>PPO RL agent (SB3) + LSTM pattern detector (PyTorch) + edge registry</td></tr>
+    <tr><td class="fc">src/tools/</td><td>MonteCarloPro, indicator_engine (pandas_ta wrapper), performance_metrics, price_level_detector, LLM client</td></tr>
+    <tr><td class="fc">src/models/</td><td>BaseStrategy ABC; drafts/ and production/ hold LLM-generated Python files</td></tr>
+    <tr><td class="fc">src/persistence/</td><td>FilesystemStore — single JSON-backed datastore (replaces a database)</td></tr>
+    <tr><td class="fc">src/config/</td><td>ComputationBudget frozen dataclass; switch profile via COMPUTE_PROFILE env var</td></tr>
+    <tr><td class="fc">src/watchers/</td><td>BaseWatcher ABC for polling vault directories and creating action files</td></tr>
+    <tr><td class="fc">DataStore/</td><td>Runtime JSON files — alphas, strategies, workflow state, MC audit log, debug.log</td></tr>
+    <tr><td class="fc">AI_Employee_Vault/</td><td>Obsidian vault — the inter-agent message bus (Markdown files as shared state)</td></tr>
+    <tr><td class="fc">colab/</td><td>Jupyter notebooks and colab requirements for T4 GPU training sessions</td></tr>
+    <tr><td class="fc">Technical Indicators/</td><td>Vendored pandas_ta_classic library used by indicator_engine</td></tr>
+    <tr><td class="fc">Dataset-Testing-US30/</td><td>Sample CSV tick data for local dev/testing (no Alpaca needed)</td></tr>
+  </table>
+</div>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      darkMode: true,
+      background: '#111318',
+      primaryColor: '#1e2d3e',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#00d9ff',
+      lineColor: '#64748b',
+      secondaryColor: '#1a1a2e',
+      tertiaryColor: '#1a2e1a',
+      edgeLabelBackground: '#111318',
+      fontSize: '13px'
+    },
+    flowchart: { curve: 'basis', useMaxWidth: true },
+    sequence: { useMaxWidth: true, messageFontSize: 12 }
+  });
+
+  function show(id, btn) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

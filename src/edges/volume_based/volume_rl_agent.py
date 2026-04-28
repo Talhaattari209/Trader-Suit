@@ -12,10 +12,28 @@ try:
 except ImportError:
     HAS_SB3 = False
 
+from src.config.computation_budget import budget as CB
 
-def train_rl_volume(df: pd.DataFrame, total_timesteps: int = 10000) -> Optional[Any]:
+
+def train_rl_volume(
+    df: pd.DataFrame,
+    total_timesteps: int | None = None,
+) -> Optional[Any]:
+    """Train a PPO agent on volume/OHLCV features.
+
+    total_timesteps defaults to CB.rl_max_episodes * CB.backtest_bars
+    (60,000 on local / 4,000,000 on colab).  Pass an explicit value to override.
+    """
     if not HAS_SB3 or df is None or len(df) < 50:
         return None
+
+    # Apply backtest data window from budget — focus on recent, clean data
+    if len(df) > CB.backtest_bars:
+        df = df.tail(CB.backtest_bars)
+
+    _total_ts = total_timesteps if total_timesteps is not None else (
+        CB.rl_max_episodes * min(len(df), CB.backtest_bars)
+    )
 
     class VolumeEnv(gym.Env):
         def __init__(self, data: pd.DataFrame):
@@ -42,6 +60,13 @@ def train_rl_volume(df: pd.DataFrame, total_timesteps: int = 10000) -> Optional[
             return next_obs, reward, done, False, {}
 
     env = DummyVecEnv([lambda: VolumeEnv(df)])
-    model = PPO("MlpPolicy", env, learning_rate=1e-4, verbose=0)
-    model.learn(total_timesteps=min(total_timesteps, max(1000, len(df))))
+    model = PPO(
+        "MlpPolicy", env,
+        learning_rate = 1e-4,
+        n_steps       = 64 if CB.rl_batch_size <= 32 else 256,
+        batch_size    = CB.rl_batch_size,
+        n_epochs      = 3 if CB.rl_batch_size <= 32 else 10,
+        verbose       = 0,
+    )
+    model.learn(total_timesteps=min(_total_ts, max(1000, len(df))))
     return model

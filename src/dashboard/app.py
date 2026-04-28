@@ -12,7 +12,6 @@ root_path = Path(__file__).resolve().parent.parent.parent
 if str(root_path) not in sys.path:
     sys.path.insert(0, str(root_path))
 
-import requests
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
@@ -26,6 +25,7 @@ from src.dashboard.config import (
 from src.dashboard.session_state import init_session_state, get_date_range
 from src.dashboard.components import apply_theme, metric_card_simple, plotly_layout
 from src.dashboard.config import THEME
+from src.dashboard.autonomous_chat import render_autonomous_agent_widget
 
 # ── Page config (must be first Streamlit call) ───────────────────────────────
 st.set_page_config(
@@ -38,10 +38,14 @@ st.set_page_config(
 apply_theme()
 init_session_state()
 
+# ── Autonomous Agent floating widget (appears on every page) ─────────────────
+render_autonomous_agent_widget(api_base_url=API_BASE_URL)
+
 
 def _fetch(endpoint: str, fallback):
     try:
-        r = requests.get(f"{API_BASE_URL}{endpoint}", timeout=3)
+        import httpx
+        r = httpx.get(f"{API_BASE_URL}{endpoint}", timeout=5)
         r.raise_for_status()
         return r.json()
     except Exception:
@@ -91,6 +95,19 @@ with st.sidebar:
     st.markdown(f"🔗 **API:** `{API_BASE_URL}`")
     st.caption(f"Last render: {datetime.utcnow().strftime('%H:%M:%S UTC')}")
 
+    # Compute profile badge
+    try:
+        from src.config.computation_budget import COMPUTE_PROFILE, budget as CB
+        _icon = "🟢" if COMPUTE_PROFILE == "colab" else "🟡"
+        st.divider()
+        st.caption(
+            f"{_icon} **Compute:** `{COMPUTE_PROFILE.upper()}`  \n"
+            f"MC {CB.mc_iterations:,} paths · SHAP {CB.shap_n_samples} samples  \n"
+            f"Data {CB.data_max_bars} bars · RL {CB.rl_max_episodes} ep"
+        )
+    except Exception:
+        pass
+
 # ── Main: Dashboard layout (1:5 sidebar already in sidebar) ─────────────────
 st.markdown("# 🏠 Dashboard")
 st.markdown("System health, performance, and quick actions.")
@@ -118,12 +135,37 @@ else:
 
 # Quick actions
 col_btn1, col_btn2, _ = st.columns([1, 1, 2])
-with col_btn1:
+# ── Workflow Status Panel ─────────────────────────────────────────────────────
+wf = _fetch("/workflow/state", {})
+st.subheader("Current Workflow")
+step_labels = {
+    "idle":               "⚪ Idle — no workflow running",
+    "librarian_running":  "🔵 Librarian extracting hypothesis…",
+    "librarian_done":     "✅ Librarian done — awaiting feedback",
+    "strategist_running": "🔵 Strategist generating code…",
+    "strategist_done":    "✅ Strategist done",
+    "killer_running":     "🔵 Killer running Monte Carlo…",
+    "killer_done":        "⚖️ Awaiting Human Decision",
+    "risk_done":          "✅ Risk sizing applied — awaiting HITL",
+    "approved":           "🟢 Approved — execution ready",
+    "discarded":          "🔴 Discarded → Graveyard",
+}
+step = wf.get("step", "idle") if isinstance(wf, dict) else "idle"
+st.info(step_labels.get(step, step))
+if isinstance(wf, dict):
+    alpha_id = wf.get("alpha_id") or wf.get("context", {}).get("alpha_id")
+    if alpha_id:
+        st.caption(f"Alpha ID: `{alpha_id}`")
+    if wf.get("circuit_breaker_active"):
+        st.error("⛔ Circuit Breaker ACTIVE — consecutive loss limit reached. Manual reset required.")
+
+col_go_lab, col_go_bt, _ = st.columns([1, 1, 2])
+with col_go_lab:
     if st.button("✨ New Alpha Idea", use_container_width=True):
         st.switch_page("pages/1_Alpha_Idea_Lab.py")
-with col_btn2:
-    if st.button("📡 View Live MT5 Feed", use_container_width=True):
-        st.switch_page("pages/7_Execution_Reports.py")
+with col_go_bt:
+    if st.button("🎯 Backtester", use_container_width=True):
+        st.switch_page("pages/5_Backtester_Killer.py")
 
 st.divider()
 

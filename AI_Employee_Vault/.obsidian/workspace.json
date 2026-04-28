@@ -6,6 +6,7 @@
       {
         "id": "1dcde5601266b045",
         "type": "tabs",
+        "dimension": 72.64957264957265,
         "children": [
           {
             "id": "324bcae203691918",
@@ -13,12 +14,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Welcome.md",
+                "file": "2026-04-02.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Welcome"
+              "title": "2026-04-02"
             }
           }
         ]
@@ -26,6 +27,7 @@
       {
         "id": "3b760a0407d40959",
         "type": "tabs",
+        "dimension": 27.350427350427353,
         "children": [
           {
             "id": "aea5424bf9ed8f2c",
@@ -199,12 +201,16 @@
       "bases:Create new base": false
     }
   },
-  "active": "d79af510417921f9",
+  "active": "324bcae203691918",
   "lastOpenFiles": [
+    "Needs_Action/idea_wf_c2947098.md",
+    "Needs_Action/idea_wf_97ebeef3.md",
+    "Research_Data/Actor_critic_models.md",
+    "2026-04-02.md",
+    "Welcome.md",
     "Strategy_Graveyard",
     "Done",
     "Plans",
-    "Needs_one",
-    "Welcome.md"
+    "Needs_one"
   ]
 }

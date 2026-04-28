@@ -30,6 +30,7 @@ class KillerAgent(BaseAgent):
     """
     Validates a US30 strategy by injecting execution friction and running
     Monte Carlo path simulation. Writes a Risk Audit to the vault.
+    Also detects 1H price levels and logs everything to DataStore.
     """
 
     def __init__(
@@ -52,6 +53,13 @@ class KillerAgent(BaseAgent):
         self.initial_capital = initial_capital
         self.monte_carlo = MonteCarloPro(iterations=iterations)
         self.drafts_dir = self.vault_path.parent / "src" / "models" / "drafts"
+
+        # FilesystemStore for MC audit logging
+        try:
+            from src.persistence.filesystem_store import FilesystemStore
+            self._store = FilesystemStore()
+        except Exception:
+            self._store = None
 
     def _load_latest_strategy(self) -> Any:
         """Find and load the most recent strategy class from src/models/drafts/."""
@@ -279,10 +287,28 @@ class KillerAgent(BaseAgent):
         }
 
     async def act(self, plan: Dict[str, Any]) -> bool:
-        """Write Risk Audit markdown to Vault/Logs/."""
+        """
+        Write Risk Audit markdown to Vault/Logs/.
+        Detect 1H price levels and log MC run to DataStore.
+        """
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         audit_path = self.logs_dir / f"Risk_Audit_{ts}.md"
+
+        # Detect 1H price levels for this MC run
+        price_levels: dict = {}
+        try:
+            from src.tools.price_level_detector import detect_all_price_levels
+            import pandas as _pd
+            if self.csv_path and Path(self.csv_path).exists():
+                df = _pd.read_csv(self.csv_path, parse_dates=True, index_col=0)
+                price_levels = detect_all_price_levels(df)
+                self.log_action("act", (
+                    f"PriceLevelDetector: {len(price_levels.get('liquidity_zones', []))} liq zones, "
+                    f"{len(price_levels.get('fvg_zones', []))} FVG zones (1H)"
+                ))
+        except Exception as e:
+            self.log_action("act", f"Price level detection skipped: {e}")
 
         decision = plan.get("decision", "UNKNOWN")
         reason = plan.get("reason", "")
@@ -337,6 +363,15 @@ mean_simulated_sharpe: {mean_simulated_sharpe:.4f}
 
 {param_section}
 
+## Price Levels (1H — at MC run time)
+
+- Liquidity zones: {len(price_levels.get("liquidity_zones", []))}
+- FVG zones: {len(price_levels.get("fvg_zones", []))}
+- Day High: {price_levels.get("session_levels", {}).get("day", {}).get("high", "N/A")}
+- Day Low: {price_levels.get("session_levels", {}).get("day", {}).get("low", "N/A")}
+- Week High: {price_levels.get("session_levels", {}).get("week", {}).get("high", "N/A")}
+- Detected at: {price_levels.get("detected_at", "N/A")}
+
 ## Actions
 
 - If **REJECT**: Move strategy to `/Strategy_Graveyard`.
@@ -345,6 +380,31 @@ mean_simulated_sharpe: {mean_simulated_sharpe:.4f}
 """
         audit_path.write_text(body, encoding="utf-8")
         self.log_action("act", f"Wrote {audit_path}")
+
+        # ── Log MC run to DataStore ───────────────────────────────────────────
+        if self._store:
+            try:
+                mc_results_summary = {
+                    "decision": decision,
+                    "reason": reason,
+                    "metrics": {
+                        "prob_of_ruin": prob_of_ruin,
+                        "actual_sharpe": actual_sharpe,
+                        "mean_simulated_sharpe": mean_simulated_sharpe,
+                    },
+                    "regime_results": {k: {"prob_of_ruin": v.get("prob_of_ruin")}
+                                       for k, v in (plan.get("regime_results") or {}).items()},
+                }
+                strategy_name = plan.get("strategy_name", "unknown")
+                run_id = self._store.log_mc_run(strategy_name, mc_results_summary, price_levels)
+                self._store.advance_workflow_step("killer_done", {
+                    "strategy_id": strategy_name,
+                    "mc_run_id": run_id,
+                    "pass": decision == "APPROVE",
+                })
+                self.log_action("act", f"MC run logged to DataStore: {run_id}")
+            except Exception as e:
+                self.log_action("act", f"DataStore MC log failed: {e}")
 
         # Paradigms Task 1: on REJECT/FLAG write journaled entry to graveyard (if DB available)
         if decision in ("REJECT", "FLAG"):

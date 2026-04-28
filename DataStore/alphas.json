@@ -1,0 +1,32 @@
+[
+  {
+    "hypothesis": "1. Price breaks above the 30-minute opening range high\n   - Opening range = first 30 minutes after market open (9:30-10:00 AM EST(Nyk opening time))\n   - Breakout = close above the high of this range\n\n2. Current bar body is at least 1.5x the average size of body of previous 10 candles of the opening range\n\n3. Price is above VWAP\n\n4. Time is within first 2 hours of session (before 11:30 AM EST)",
+    "edge_type": "unknown",
+    "regime_tags": [],
+    "session": "unknown",
+    "status": "draft",
+    "workflow_id": "wf_97ebeef3",
+    "price_levels": {},
+    "similar": [],
+    "alpha_id": "alpha_20260402_045216_2d60",
+    "created_at": "2026-04-02T04:52:16.139826+00:00"
+  },
+  {
+    "hypothesis": "1. Price breaks above the 30-minute opening range high\n   - Opening range = first 30 minutes after market open (9:30-10:00 AM EST (NYK openning))\n   - Breakout = close above the high of this range(last 12 candles)\n\n2. Current bar body size  is at least 1.5x the average body size of the last 10 bars and it must be above mid point of last (londen) session\n\n3. Price is above VWAP\n\n4. Time is within first 2 hours of session (before 11:30 AM EST)",
+    "edge_type": "unknown",
+    "regime_tags": [],
+    "session": "unknown",
+    "status": "draft",
+    "workflow_id": "wf_c2947098",
+    "price_levels": {},
+    "similar": [
+      {
+        "alpha_id": "alpha_20260402_045216_2d60",
+        "hypothesis": "1. Price breaks above the 30-minute opening range high\n   - Opening range = first 30 minutes after m",
+        "score": 0.951
+      }
+    ],
+    "alpha_id": "alpha_20260402_050413_8ceb",
+    "created_at": "2026-04-02T05:04:13.968624+00:00"
+  }
+]

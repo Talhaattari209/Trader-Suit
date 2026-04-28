@@ -3,12 +3,14 @@ import logging
 from pathlib import Path
 from abc import ABC, abstractmethod
 
+from src.config.computation_budget import budget as CB
+
 
 class BaseWatcher(ABC):
-    def __init__(self, vault_path: str, check_interval: int = 60):
+    def __init__(self, vault_path: str, check_interval: float | None = None):
         self.vault_path = Path(vault_path)
         self.needs_action = self.vault_path / 'Needs_Action'
-        self.check_interval = check_interval
+        self.check_interval = check_interval if check_interval is not None else CB.agent_poll_interval_s
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod

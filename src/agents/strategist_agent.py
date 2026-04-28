@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from .base_agent import BaseAgent
 from ..data.us30_loader import US30Loader
-from ..tools.llm_client import BaseLLMClient, AnthropicLLMClient, GeminiLLMClient
+from ..tools.llm_client import BaseLLMClient, GeminiLLMClient, get_default_llm_client
 
 try:
     from src.edges.edge_registry import registry_summary_for_llm
@@ -71,16 +71,16 @@ class StrategistAgent(BaseAgent):
         if llm_client:
             self.llm = llm_client
         else:
-            # Auto-detect client
-            if os.environ.get("ANTHROPIC_API_KEY"):
-                self.llm = AnthropicLLMClient()
-            elif os.environ.get("GEMINI_API_KEY"):
-                self.llm = GeminiLLMClient()
-            else:
-                self.logger.warning("No API key found (Anthropic or Gemini). Strategist will fail.")
-                self.llm = AnthropicLLMClient() # Default to Anthropic to let it error out if tried
-        
+            self.llm = get_default_llm_client()  # Gemini by default
+
         self._processed_log = self.logs_dir / "strategist_processed.log"
+
+        # FilesystemStore for price_levels + strategy metadata persistence
+        try:
+            from src.persistence.filesystem_store import FilesystemStore
+            self._store = FilesystemStore()
+        except Exception:
+            self._store = None
 
     def _load_processed(self) -> set:
         if self._processed_log.exists():
@@ -157,19 +157,75 @@ class StrategistAgent(BaseAgent):
         return {"drafts": drafts, "items": state}
 
     async def act(self, plan: Dict[str, Any]) -> bool:
-        """Write each strategy_<name>.py to drafts/ and mark plans as processed."""
+        """
+        Write each strategy_<name>.py to drafts/ and mark plans as processed.
+        Also detects price_levels on 1H data and saves strategy metadata to DataStore.
+        """
         drafts_list = plan.get("drafts") or []
-        items = plan.get("items") or []
+        items       = plan.get("items") or []
         self.drafts_dir.mkdir(parents=True, exist_ok=True)
+
+        # Detect price levels once (1H candle data)
+        price_levels: dict = {}
+        try:
+            from src.tools.price_level_detector import detect_all_price_levels
+            import pandas as pd
+            if self.us30_csv_path and Path(self.us30_csv_path).exists():
+                df = pd.read_csv(self.us30_csv_path, parse_dates=True, index_col=0)
+                price_levels = detect_all_price_levels(df)
+                self.log_action("act", (
+                    f"PriceLevelDetector: {len(price_levels.get('liquidity_zones', []))} liquidity zones, "
+                    f"{len(price_levels.get('fvg_zones', []))} FVG zones detected (1H)"
+                ))
+        except Exception as e:
+            self.log_action("act", f"Price level detection skipped: {e}")
+
         for d in drafts_list:
             name = d.get("name", "unknown").replace(" ", "_")
             code = d.get("code", "")
             out_path = self.drafts_dir / f"strategy_{name}.py"
-            # Ensure correct import path from drafts (sibling of models)
             if "from src.models.base_strategy" not in code and "BaseStrategy" in code:
                 code = "from src.models.base_strategy import BaseStrategy\n\n" + code
+            # Embed price_levels as class attribute comment
+            if price_levels and "self.price_levels" not in code:
+                import json as _json
+                pl_str = _json.dumps(price_levels, indent=4, default=str)
+                inject = f"\n        # Price levels snapshot (1H) at strategy creation\n        self.price_levels = {pl_str}\n"
+                # Insert after __init__ signature if present, else append
+                if "def __init__" in code:
+                    lines = code.splitlines()
+                    for i, ln in enumerate(lines):
+                        if "def __init__" in ln:
+                            insert_at = i + 1
+                            # find first non-empty non-docstring line
+                            for j in range(insert_at, min(insert_at + 20, len(lines))):
+                                if lines[j].strip() and not lines[j].strip().startswith('"""') and not lines[j].strip().startswith("super("):
+                                    insert_at = j
+                                    break
+                            lines.insert(insert_at, inject)
+                            code = "\n".join(lines)
+                            break
+
             out_path.write_text(code, encoding="utf-8")
             self.log_action("act", f"Wrote {out_path.name}")
+
+            # ── Save strategy metadata + price_levels to DataStore ────────────
+            if self._store:
+                try:
+                    strategy_id = f"strategy_{name}"
+                    self._store.save_strategy_metadata(strategy_id, {
+                        "name": name,
+                        "status": "draft",
+                        "file": str(out_path),
+                        "price_levels": price_levels,
+                    })
+                    self._store.advance_workflow_step("strategist_done", {
+                        "strategy_id": strategy_id,
+                        "price_levels": price_levels,
+                    })
+                except Exception as e:
+                    self.log_action("act", f"DataStore strategy save failed: {e}")
+
         for item in items:
             self._mark_processed(item["path"])
         return True

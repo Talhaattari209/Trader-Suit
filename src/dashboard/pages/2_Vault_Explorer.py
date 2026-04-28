@@ -1,13 +1,15 @@
 """Vault Explorer — file-based Obsidian vault (Needs_Action, Plans, Approved, Reports, Logs)."""
 
 import streamlit as st
-from src.dashboard.config import LAYOUT_SIDEBAR_MAIN, VAULT_FOLDERS
+from src.dashboard.config import LAYOUT_SIDEBAR_MAIN, VAULT_FOLDERS, API_BASE_URL
 from src.dashboard.components import apply_theme
 from src.dashboard.session_state import init_session_state
+from src.dashboard.autonomous_chat import render_autonomous_agent_widget
 
 st.set_page_config(page_title="Vault Explorer — Trader-Suit", page_icon="📁", layout="wide")
 apply_theme()
 init_session_state()
+render_autonomous_agent_widget(api_base_url=API_BASE_URL)
 
 with st.sidebar:
     st.markdown("## 📁 Vault Explorer")
